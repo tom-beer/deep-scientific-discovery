@@ -3,4 +3,4 @@
 # deep-scientific-discovery
 An implementation of the paper 'Using Deep Networks for Scientific Discovery'
 
-Will be updatad soon..
+Will be updated soon..
