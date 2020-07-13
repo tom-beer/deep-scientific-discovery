@@ -1,3 +1,6 @@
 .git/*
 .idea/*
 ECG/data/*
+EEG/shhs/*
+EEG/data/*
+EEG/saved_models/*/*gap*

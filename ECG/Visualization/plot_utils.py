@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from collections import Counter
 from scipy.signal import savgol_filter, resample
 
-from ECG.train.custom_dataloader import CustomDataset
+from ECG.train.datasets import ECGDataset
 from networks import HaifaNetVPT
 from ECG.train.train_utils import get_device
 
@@ -291,8 +291,8 @@ def get_global_template(file_name, cam_target=1, label='af', feature_subset='rr'
     signal_len = 5400
     conv0_len = 2700
 
-    test_dataset = CustomDataset("test", feature_subset=feature_subset,
-                                 feature_opt=feature_opt, oversample=label)
+    test_dataset = ECGDataset("test", feature_subset=feature_subset,
+                              feature_opt=feature_opt, oversample=label)
     test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=1, shuffle=False)
 
     model = HaifaNetVPT(num_classes=3, feature_len=test_dataset.feature_len, feature_opt=feature_opt, gap_norm_opt='batch_norm')

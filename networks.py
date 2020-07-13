@@ -321,3 +321,23 @@ class Rep2Label(nn.Module):
         x = self.relu(x)
         x = self.fc_layer3(x)
         return x
+
+
+class FCFeatureNet(nn.Module):
+    def __init__(self, num_classes, feature_len=0):
+        super(FCFeatureNet, self).__init__()
+        hidden_layer_size = 128
+
+        self.relu = nn.ReLU()
+        self.fc_layer1 = nn.Linear(in_features=feature_len, out_features=hidden_layer_size, bias=True)
+        self.fc_hidden_layer = nn.Linear(in_features=hidden_layer_size, out_features=hidden_layer_size, bias=True)
+        self.fc_layer2 = nn.Linear(in_features=hidden_layer_size, out_features=num_classes, bias=True)
+
+    def forward(self, x, features=None):
+        x = self.fc_layer1(x)
+        x = self.relu(x)
+        x = self.fc_hidden_layer(x)
+        rep = self.relu(x)
+        x = self.fc_layer2(rep)
+
+        return x, rep

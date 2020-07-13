@@ -6,7 +6,7 @@ from torch import nn, optim
 from tqdm import tqdm
 from sklearn.metrics import f1_score
 from networks import FC_FeatureNet
-from ECG.train.custom_dataloader import CustomDataset
+from ECG.train.datasets import ECGDataset
 from ECG.feature_utils import update_rep_dict
 import pickle as pkl
 
@@ -43,16 +43,16 @@ device = torch.device("cuda:"+cuda_id if is_cuda else "cpu")
 feature_opt = 'Concat'
 base_dir = ".."
 
-train_dataset = CustomDataset("train", feature_subset=feature_subset, feature_opt=feature_opt,
-                              oversample=oversample, naf=naf)
+train_dataset = ECGDataset("train", feature_subset=feature_subset, feature_opt=feature_opt,
+                           oversample=oversample, naf=naf)
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=False,
                                            sampler=train_dataset.sampler)
-val_dataset = CustomDataset("val", feature_subset=feature_subset, feature_opt=feature_opt,
-                            oversample=oversample, naf=naf)
+val_dataset = ECGDataset("val", feature_subset=feature_subset, feature_opt=feature_opt,
+                         oversample=oversample, naf=naf)
 val_loader = torch.utils.data.DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=False,
                                          sampler=val_dataset.sampler)
-test_dataset = CustomDataset("test", feature_subset=feature_subset, feature_opt=feature_opt,
-                             oversample=oversample, naf=naf)
+test_dataset = ECGDataset("test", feature_subset=feature_subset, feature_opt=feature_opt,
+                          oversample=oversample, naf=naf)
 test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False,
                                           sampler=test_dataset.sampler)
 

@@ -1,7 +1,7 @@
 import torch
 from ECG.Visualization.plot_utils import plot_cam
 from networks import HaifaNetVPT
-from ECG.train.custom_dataloader import CustomDataset
+from ECG.train.datasets import ECGDataset
 
 # lambda_500_rr_balanced_NAF
 # 'BaselineDS_balanced_naf'
@@ -51,9 +51,9 @@ else:
     cam_target = 2
 
 
-test_dataset = CustomDataset(mode="test", signal_len=signal_len, feature_subset=feature_subset, feature_opt=feature_opt,
-                             permute_labels=False, downsample=True, oversample='none', is_baseline=False,
-                             sin_alpha=sin_alpha)
+test_dataset = ECGDataset(mode="test", signal_len=signal_len, feature_subset=feature_subset, feature_opt=feature_opt,
+                          permute_labels=False, downsample=True, oversample='none', is_baseline=False,
+                          sin_alpha=sin_alpha)
 test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
 model = HaifaNetVPT(num_classes=3, signal_len=signal_len, feature_len=test_dataset.feature_len,
                     feature_opt=feature_opt, gap_norm_opt=gap_norm, kernel_size=kernel_size).to(device)
