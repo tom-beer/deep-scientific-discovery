@@ -12,6 +12,11 @@ This repository contains code for the paper [Using Deep Networks for Scientific 
 
 📋 Will be updated soon..
 
+### To apply the method on your task
+Integrate HSICClassifier from networks.py and HSICLoss from hsic.py in your classification task
+
+### To run the ECG experiments
+### 🧠 To run the EEG experiments
 <details>
   <summary><b>Details</b></summary>
     
@@ -21,6 +26,3 @@ This repository contains code for the paper [Using Deep Networks for Scientific 
 
 ## Requirements
 :anatomical_heart:
-## Experiments
-### ECG
-### 🧠 EEG
