@@ -6,3 +6,9 @@
 An implementation of the paper 'Using Deep Networks for Scientific Discovery in Physiological Signals'
 
 Will be updated soon..
+
+<details>
+  <summary><b>Details/b></summary>
+  - one
+  - two
+</details>
