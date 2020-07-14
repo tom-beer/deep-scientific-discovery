@@ -5,8 +5,8 @@ import numpy as np
 import os
 from yasa import rem_detect
 
-from EEG.features import compute_features, feature_names_len_from_subset, normalize_features
-from EEG.datasets import DSMDataset
+from EEG.feature_utils import compute_features, feature_names_len_from_subset, normalize_features
+from EEG.datasets import SHHSDataset
 
 
 def extract_features(features_to_compute, save_name, low, modes=None, mini=False, normalize=False, num_chan=2):
@@ -23,9 +23,9 @@ def extract_features(features_to_compute, save_name, low, modes=None, mini=False
 
     features = {}
     for mode in modes:
-        dataset = DSMDataset(mode, num_patients=1e8, dataset_dir=dataset_dir, conv_d=1, features_subset=[],
-                             one_slice=True, num_ch=num_chan, task='rem_nrem', normalize_signals=False,
-                             oversample=False)
+        dataset = SHHSDataset(mode, num_patients=1e8, dataset_dir=dataset_dir, conv_d=1, features_subset=[],
+                              one_slice=True, num_ch=num_chan, task='rem_nrem', normalize_signals=False,
+                              oversample=False)
 
         if mini:
             dataset.mini_dataset()

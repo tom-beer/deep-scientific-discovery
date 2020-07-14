@@ -1,7 +1,6 @@
 import torch
 import torch.utils.data
 from torch import nn
-import numpy as np
 
 
 class ResidualBlock(nn.Module):
@@ -43,9 +42,9 @@ class ResidualBlock(nn.Module):
         return outputs
 
 
-class HaifaNetVPT(nn.Module):
-    def __init__(self, num_classes, feature_opt='None', feature_len=0, gap_norm_opt='batch_norm'):
-        super(HaifaNetVPT, self).__init__()
+class HSICClassifier(nn.Module):
+    def __init__(self, num_classes, in_channels, feature_opt='None', feature_len=0, gap_norm_opt='batch_norm'):
+        super(HSICClassifier, self).__init__()
         self.num_classes = num_classes
         self.feature_opt = feature_opt
         self.feature_len = feature_len
@@ -60,7 +59,7 @@ class HaifaNetVPT(nn.Module):
         padding = kernel_size//2
 
         self.conv1 = nn.Sequential(
-            nn.Conv1d(in_channels=1, out_channels=conv_filts, kernel_size=kernel_size, stride=1,
+            nn.Conv1d(in_channels=in_channels, out_channels=conv_filts, kernel_size=kernel_size, stride=1,
                       padding=padding, bias=False, dilation=1),
             nn.MaxPool1d(kernel_size=kernel_size, stride=2, padding=padding),
         )
@@ -172,10 +171,6 @@ class HaifaNetVPT(nn.Module):
         return logits, cam, gap
 
 
-from torch import nn
-import torch
-
-
 class FC_FeatureNet(nn.Module):
     def __init__(self, num_classes, feature_len=0):
         super(FC_FeatureNet, self).__init__()
@@ -192,55 +187,6 @@ class FC_FeatureNet(nn.Module):
         return x, rep
 
 
-class OLD_multi_FC_FeatureNet(nn.Module):
-    def __init__(self, rep_size=512, out_size=12):
-        super(multi_FC_FeatureNet, self).__init__()
-        hidden_layer_size = 128
-
-        self.out_size = out_size
-        self.relu = nn.ReLU()
-        self.fc_layer1 = nn.Linear(in_features=rep_size, out_features=hidden_layer_size, bias=True)
-        self.fc_layer2 = nn.Linear(in_features=hidden_layer_size, out_features=hidden_layer_size, bias=True)
-
-        # per feature
-        self.fc_layer_f1 = nn.Linear(in_features=hidden_layer_size, out_features=1, bias=True)
-        self.fc_layer_f2 = nn.Linear(in_features=hidden_layer_size, out_features=1, bias=True)
-        self.fc_layer_f3 = nn.Linear(in_features=hidden_layer_size, out_features=1, bias=True)
-        self.fc_layer_f4 = nn.Linear(in_features=hidden_layer_size, out_features=1, bias=True)
-        self.fc_layer_f5 = nn.Linear(in_features=hidden_layer_size, out_features=1, bias=True)
-        self.fc_layer_f6 = nn.Linear(in_features=hidden_layer_size, out_features=1, bias=True)
-        self.fc_layer_f7 = nn.Linear(in_features=hidden_layer_size, out_features=1, bias=True)
-        self.fc_layer_f8 = nn.Linear(in_features=hidden_layer_size, out_features=1, bias=True)
-        self.fc_layer_f9 = nn.Linear(in_features=hidden_layer_size, out_features=1, bias=True)
-        self.fc_layer_f10 = nn.Linear(in_features=hidden_layer_size, out_features=1, bias=True)
-        self.fc_layer_f11= nn.Linear(in_features=hidden_layer_size, out_features=1, bias=True)
-        self.fc_layer_f12 = nn.Linear(in_features=hidden_layer_size, out_features=1, bias=True)
-
-    def forward(self, x, features=None):
-        x = self.fc_layer1(x)
-        x = self.relu(x)
-        x = self.fc_layer2(x)
-        x = self.relu(x)
-
-        # per feature
-        x1 = self.fc_layer_f1(x)
-        x2 = self.fc_layer_f2(x)
-        x3 = self.fc_layer_f3(x)
-        x4 = self.fc_layer_f4(x)
-        x5 = self.fc_layer_f5(x)
-        x6 = self.fc_layer_f6(x)
-        x7 = self.fc_layer_f7(x)
-        x8 = self.fc_layer_f8(x)
-        x9 = self.fc_layer_f9(x)
-        x10 = self.fc_layer_f10(x)
-        x11 = self.fc_layer_f11(x)
-        x12 = self.fc_layer_f12(x)
-
-        x = torch.cat([x1, x2, x3, x4, x5, x6,x7,x8, x9, x10, x11, x12], dim=1)
-
-        return x
-
-
 class multi_FC_FeatureNet(nn.Module):
     def __init__(self, rep_size=512, out_size=17):
         super(multi_FC_FeatureNet, self).__init__()
@@ -251,7 +197,6 @@ class multi_FC_FeatureNet(nn.Module):
         self.fc_layer1 = nn.Linear(in_features=rep_size, out_features=hidden_layer_size, bias=True)
         self.fc_layer2 = nn.Linear(in_features=hidden_layer_size, out_features=hidden_layer_size, bias=True)
         self.fc_layer3 = nn.Linear(in_features=hidden_layer_size, out_features=out_size, bias=True)
-
 
     def forward(self, x, features=None):
         x = self.fc_layer1(x)

@@ -9,7 +9,7 @@ from collections import Counter
 from scipy.signal import savgol_filter, resample
 
 from ECG.train.datasets import ECGDataset
-from networks import HaifaNetVPT
+from networks import HSICClassifier
 from ECG.train.train_utils import get_device
 
 
@@ -295,7 +295,7 @@ def get_global_template(file_name, cam_target=1, label='af', feature_subset='rr'
                               feature_opt=feature_opt, oversample=label)
     test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=1, shuffle=False)
 
-    model = HaifaNetVPT(num_classes=3, feature_len=test_dataset.feature_len, feature_opt=feature_opt, gap_norm_opt='batch_norm')
+    model = HSICClassifier(num_classes=3, feature_len=test_dataset.feature_len, feature_opt=feature_opt, gap_norm_opt='batch_norm')
 
     main_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
     model_to_load = f'{file_name}_params.pkl'

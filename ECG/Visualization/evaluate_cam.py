@@ -1,6 +1,6 @@
 import torch
 from ECG.Visualization.plot_utils import plot_cam
-from networks import HaifaNetVPT
+from networks import HSICClassifier
 from ECG.train.datasets import ECGDataset
 
 # lambda_500_rr_balanced_NAF
@@ -55,8 +55,8 @@ test_dataset = ECGDataset(mode="test", signal_len=signal_len, feature_subset=fea
                           permute_labels=False, downsample=True, oversample='none', is_baseline=False,
                           sin_alpha=sin_alpha)
 test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
-model = HaifaNetVPT(num_classes=3, signal_len=signal_len, feature_len=test_dataset.feature_len,
-                    feature_opt=feature_opt, gap_norm_opt=gap_norm, kernel_size=kernel_size).to(device)
+model = HSICClassifier(num_classes=3, signal_len=signal_len, feature_len=test_dataset.feature_len,
+                       feature_opt=feature_opt, gap_norm_opt=gap_norm, kernel_size=kernel_size).to(device)
 # model = torch.nn.DataParallel(feature_model, device_ids=[1, 2, 3])
 param_filename = f'saved_models/{model_name}/{model_name}_params.pkl'
 model.load_state_dict(torch.load(param_filename, map_location='cpu'))

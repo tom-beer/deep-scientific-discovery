@@ -4,14 +4,14 @@ import pickle as pkl
 from torch.utils.data.dataset import Dataset
 from torch.utils.data.dataloader import DataLoader
 from tqdm import tqdm
-from EEG.features import feature_names_len_from_subset, estimate_med_dist, check_if_normalized
+from EEG.feature_utils import feature_names_len_from_subset, estimate_med_dist, check_if_normalized
 from sklearn.preprocessing import StandardScaler
 import numpy as np
 from torch.utils.data.sampler import WeightedRandomSampler
 import torch
 
 
-class DSMDataset(Dataset):
+class SHHSDataset(Dataset):
 
     def __init__(self, mode, num_patients, task, normalize_signals, oversample, dataset_dir='filtered', conv_d=1,
                  specific_signal=None, features_subset=None, filter_stage=None, one_slice=False, random_flag=False,
@@ -215,10 +215,10 @@ def init_datasets(task, oversample, normalize_signals, num_patients=200, dataset
         assert mode in ['train', 'val', 'test']  # Check your spelling!
     loaders = []
     if 'train' in modes:
-        train_dataset = DSMDataset(mode="train", num_patients=num_patients, dataset_dir=dataset_dir, conv_d=conv_d,
-                                   features_subset=features_subset, one_slice=one_slice, random_flag=random_flag,
-                                   num_ch=num_ch, low_sp=low_sp, filter_stage=filter_stage, task=task,
-                                   oversample=oversample, normalize_signals=normalize_signals)
+        train_dataset = SHHSDataset(mode="train", num_patients=num_patients, dataset_dir=dataset_dir, conv_d=conv_d,
+                                    features_subset=features_subset, one_slice=one_slice, random_flag=random_flag,
+                                    num_ch=num_ch, low_sp=low_sp, filter_stage=filter_stage, task=task,
+                                    oversample=oversample, normalize_signals=normalize_signals)
         shuffle = True
         if train_dataset.sampler is not None:
             shuffle = False
@@ -226,18 +226,18 @@ def init_datasets(task, oversample, normalize_signals, num_patients=200, dataset
         loaders += [train_loader]
 
     if 'val' in modes:
-        val_dataset = DSMDataset(mode="valid", num_patients=num_patients, dataset_dir=dataset_dir, conv_d=conv_d,
-                                 features_subset=features_subset, one_slice=one_slice, random_flag=random_flag,
-                                 num_ch=num_ch, low_sp=low_sp, filter_stage=filter_stage, task=task,
-                                 oversample=oversample, normalize_signals=normalize_signals)
+        val_dataset = SHHSDataset(mode="valid", num_patients=num_patients, dataset_dir=dataset_dir, conv_d=conv_d,
+                                  features_subset=features_subset, one_slice=one_slice, random_flag=random_flag,
+                                  num_ch=num_ch, low_sp=low_sp, filter_stage=filter_stage, task=task,
+                                  oversample=oversample, normalize_signals=normalize_signals)
         val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=False, sampler=val_dataset.sampler)
         loaders += [val_loader]
 
     if 'test' in modes:
-        test_dataset = DSMDataset(mode="test", num_patients=num_patients, dataset_dir=dataset_dir, conv_d=conv_d,
-                                  features_subset=features_subset, one_slice=one_slice, random_flag=random_flag,
-                                  num_ch=num_ch, low_sp=low_sp, filter_stage=filter_stage, task=task,
-                                  oversample=oversample, normalize_signals=normalize_signals)
+        test_dataset = SHHSDataset(mode="test", num_patients=num_patients, dataset_dir=dataset_dir, conv_d=conv_d,
+                                   features_subset=features_subset, one_slice=one_slice, random_flag=random_flag,
+                                   num_ch=num_ch, low_sp=low_sp, filter_stage=filter_stage, task=task,
+                                   oversample=oversample, normalize_signals=normalize_signals)
         test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False, sampler=test_dataset.sampler)
         loaders += [test_loader]
 
@@ -251,8 +251,8 @@ def init_specific_signal(specific_signal_name, dataset_dir='filtered0.05', conv_
                          low_sp=False, num_ch=2, one_slice=False):
     if features_to_compute is None:
         features_to_compute = []
-    test_dataset = DSMDataset("test", num_patients=1, dataset_dir=dataset_dir, conv_d=conv_d, num_ch=num_ch,
-                              specific_signal=specific_signal_name, features_subset=features_to_compute, low_sp=low_sp, one_slice=one_slice)
+    test_dataset = SHHSDataset("test", num_patients=1, dataset_dir=dataset_dir, conv_d=conv_d, num_ch=num_ch,
+                               specific_signal=specific_signal_name, features_subset=features_to_compute, low_sp=low_sp, one_slice=one_slice)
     test_loader = DataLoader(dataset=test_dataset, batch_size=1, shuffle=False)
     return test_loader
 

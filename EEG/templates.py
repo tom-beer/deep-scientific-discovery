@@ -9,7 +9,7 @@ from tqdm import tqdm
 from scipy.signal import find_peaks
 from biosppy.signals.emg import silva_onset_detector
 
-from networks import HaifaNetVPT
+from networks import HSICClassifier
 from EEG.datasets import init_datasets
 from EEG.train_utils import get_device, run_params
 
@@ -234,8 +234,8 @@ def get_templates(file_name, oversample, template_opt='spindle', cam_target=2, n
                                     random_flag=False, num_ch=num_ch, low_sp=low_sp, filter_stage=filter_stage,
                                     task=task, normalize_signals=normalize_signals, oversample=oversample)
     
-        model = HaifaNetVPT(num_classes=num_classes, signal_len=signal_len, feature_opt=feature_opt,
-                            in_channels=num_ch, feature_len=test_loader.dataset.feature_len, gap_norm_opt=gap_norm_opt)
+        model = HSICClassifier(num_classes=num_classes, signal_len=signal_len, feature_opt=feature_opt,
+                               in_channels=num_ch, feature_len=test_loader.dataset.feature_len, gap_norm_opt=gap_norm_opt)
         model.load_state_dict(torch.load(os.path.join(file_dir, f'{file_name}_params.pkl'), map_location='cpu'))
         model.to(device)
         model.eval()

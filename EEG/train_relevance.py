@@ -6,7 +6,7 @@ from torch import nn, optim
 from tqdm import tqdm
 from networks import FCFeatureNet
 from EEG.datasets import init_datasets
-from EEG.features import feature_names_len_from_subset
+from EEG.feature_utils import feature_names_len_from_subset
 from EEG.train_utils import get_device, calc_save_perf_metrics
 
 file_name = 'rem2remnrem' #"rem_nrem_balanced_frq"

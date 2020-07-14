@@ -8,7 +8,7 @@ from torch.utils.data.dataloader import DataLoader
 import pickle as pkl
 from sklearn.metrics import pairwise_distances as pdist
 from collections import defaultdict
-from networks import HaifaNetVPT
+from networks import HSICClassifier
 from EEG.datasets import init_datasets
 from hsic import HSIC
 from EEG.train_utils import get_device, calc_save_perf_metrics, update_train_stats, run_params
@@ -78,8 +78,8 @@ train_loader, val_loader, test_loader = init_datasets(num_patients=num_patients,
                                                       features_subset=features_subset, random_flag=random_flag,
                                                       task=task, oversample=oversample, normalize_signals=normalize_signals)
 print(f'Median Distance of Features: {train_loader.dataset.med_dist}')
-model = HaifaNetVPT(num_classes=num_classes, signal_len=signal_len, feature_opt=feature_opt,
-                    feature_len=train_loader.dataset.feature_len, in_channels=num_ch, gap_norm_opt=gap_norm_opt).to(device)
+model = HSICClassifier(num_classes=num_classes, signal_len=signal_len, feature_opt=feature_opt,
+                       feature_len=train_loader.dataset.feature_len, in_channels=num_ch, gap_norm_opt=gap_norm_opt).to(device)
 print(f'Feature len: {train_loader.dataset.feature_len}')
 optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=0)
 if use_lr_sched:

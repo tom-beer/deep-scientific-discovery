@@ -57,7 +57,6 @@ test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch
                                           sampler=test_dataset.sampler)
 
 model = FC_FeatureNet(num_classes=num_classes, feature_len=train_dataset.feature_len).to(device)
-# model = OneFC(num_classes=num_classes, rep_size=train_dataset.feature_len).to(device)
 
 num_of_iteration = len(train_dataset) // batch_size
 

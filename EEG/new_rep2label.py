@@ -7,7 +7,7 @@ from torch import nn, optim
 from tqdm import tqdm
 from sklearn.metrics import r2_score
 from sklearn.metrics import mean_squared_error as mse
-from networks import HaifaNetVPT, multi_FC_FeatureNet, Rep2Label, OneFC
+from networks import HSICClassifier, multi_FC_FeatureNet, Rep2Label, OneFC
 from datasets import init_gap_datasets
 from utils.train_utils import get_device, generate_gap, calc_save_perf_metrics, run_params
 from features import feature_names_len_from_subset

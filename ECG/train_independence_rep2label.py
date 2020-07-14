@@ -10,7 +10,7 @@ from sklearn.metrics import r2_score, f1_score, precision_recall_fscore_support
 from sklearn.metrics import mean_squared_error as mse
 
 from ECG.train.datasets import GapDataset, create_dataloaders
-from networks import HaifaNetVPT, multi_FC_FeatureNet, OneFC
+from networks import HSICClassifier, multi_FC_FeatureNet, OneFC
 from ECG.train.train_utils import get_device, generate_gap
 import ECG.feature_utils as futil
 
@@ -50,8 +50,8 @@ feature_subset_dataloader = feature_subset  # if feature_subset == 'all_fcnet' e
 train_loader, val_loader, test_loader = create_dataloaders(batch_size=batch_size, feature_subset=feature_subset_dataloader,
                                                            feature_opt='HSIC+Concat', naf=naf)
 
-haifa_model = HaifaNetVPT(num_classes=num_classes, feature_len=train_loader.dataset.feature_len,
-                          feature_opt=feature_opt, gap_norm_opt='batch_norm').to(device)
+haifa_model = HSICClassifier(num_classes=num_classes, feature_len=train_loader.dataset.feature_len,
+                             feature_opt=feature_opt, gap_norm_opt='batch_norm').to(device)
 
 haifa_model.load_state_dict(torch.load(os.path.join(file_dir, f'{file_name}_params.pkl'), map_location='cpu'))
 

@@ -11,7 +11,7 @@ from ECG.train.learning_rate_schedulers import AnnealingRestartScheduler
 from ECG.train.datasets import create_dataloaders
 from hsic import HSICLoss
 from ECG.train.train_utils import get_device
-from networks import HaifaNetVPT
+from networks import HSICClassifier
 
 
 lambda_hsic = 500
@@ -50,8 +50,8 @@ base_dir = ".."
 
 train_loader, val_loader, _ = create_dataloaders(batch_size, feature_subset, feature_opt, naf)
 
-model = HaifaNetVPT(num_classes=num_classes, feature_len=train_loader.dataset.feature_len, feature_opt=feature_opt,
-                    gap_norm_opt=gap_norm_opt).to(device)
+model = HSICClassifier(num_classes=num_classes, feature_len=train_loader.dataset.feature_len, feature_opt=feature_opt,
+                       gap_norm_opt=gap_norm_opt).to(device)
 
 optimizer = optim.Adam(model.parameters(), lr=lr, betas=(0.95, 0.99), eps=1e-08, weight_decay=0, amsgrad=False)
 classification_criterion = nn.CrossEntropyLoss()

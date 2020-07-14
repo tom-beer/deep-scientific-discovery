@@ -6,7 +6,7 @@ import numpy as np
 import torch.utils.data
 import pickle as pkl
 from tqdm import tqdm
-from networks import HaifaNetVPT
+from networks import HSICClassifier
 from EEG.datasets import init_datasets
 import torch
 
@@ -116,9 +116,9 @@ def generate_gap(file_name, device, num_patients, task, batch_size, normalize_si
                                                               features_subset=features_subset, num_ch=2,
                                                               low_sp=False, modes=['train', 'val', 'test'])
 
-        haifa_model = HaifaNetVPT(num_classes=num_classes, signal_len=signal_len, feature_opt=feature_opt,
-                                  gap_norm_opt=gap_norm_opt,
-                                  feature_len=train_loader.dataset.feature_len, in_channels=2).to(device)
+        haifa_model = HSICClassifier(num_classes=num_classes, signal_len=signal_len, feature_opt=feature_opt,
+                                     gap_norm_opt=gap_norm_opt,
+                                     feature_len=train_loader.dataset.feature_len, in_channels=2).to(device)
 
         haifa_model.load_state_dict(torch.load(os.path.join(file_dir, f'{file_name}_params.pkl'), map_location='cpu'))
 

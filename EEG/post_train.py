@@ -8,10 +8,10 @@ from tqdm import tqdm
 from sklearn.metrics import r2_score
 from sklearn.metrics import mean_squared_error as mse
 
-from networks import HaifaNetVPT, Rep2Label, OneFC
+from networks import HSICClassifier, Rep2Label, OneFC
 from EEG.datasets import init_datasets, GapDataset, change_sampler
 from EEG.train_utils import generate_gap_internal, col_names_to_idx
-from EEG.features import feature_names_len_from_subset
+from EEG.feature_utils import feature_names_len_from_subset
 from EEG.train_utils import get_device, calc_save_perf_metrics, run_params
 
 file_name = "1slice_DS_Baseline_balanced"
@@ -70,8 +70,8 @@ if __name__ == "__main__":
                                                           oversample=False, normalize_signals=normalize_signals,
                                                           features_subset=features_subset, num_ch=num_ch, low_sp=low_sp)
 
-    haifa_model = HaifaNetVPT(num_classes=num_classes, signal_len=signal_len, feature_opt=feature_opt, gap_norm_opt=gap_norm_opt,
-                              feature_len=train_loader.dataset.feature_len, in_channels=num_ch).to(device)
+    haifa_model = HSICClassifier(num_classes=num_classes, signal_len=signal_len, feature_opt=feature_opt, gap_norm_opt=gap_norm_opt,
+                                 feature_len=train_loader.dataset.feature_len, in_channels=num_ch).to(device)
 
     haifa_model.load_state_dict(torch.load(os.path.join(file_dir, f'{file_name}_params.pkl'), map_location='cpu'))
 
