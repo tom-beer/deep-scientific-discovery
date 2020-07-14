@@ -8,7 +8,8 @@ An implementation of the paper 'Using Deep Networks for Scientific Discovery in 
 Will be updated soon..
 
 <details>
-  <summary><b>Details/b></summary>
+  <summary><b>Details</b></summary>
+    
   - one
   - two
 </details>
