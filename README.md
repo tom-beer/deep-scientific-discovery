@@ -20,5 +20,7 @@ This repository contains code for the paper [Using Deep Networks for Scientific 
 </details>
 
 ## Requirements
-
-## Results
+:anatomical_heart:
+## Experiments
+### ECG
+### 🧠 EEG
