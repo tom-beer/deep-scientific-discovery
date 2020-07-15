@@ -5,7 +5,7 @@ import torch.utils.data
 from torch import nn, optim
 from tqdm import tqdm
 from sklearn.metrics import f1_score
-from networks import FC_FeatureNet
+from networks import MLP1Layer
 from ECG.train.datasets import ECGDataset
 from ECG.feature_utils import update_rep_dict
 import pickle as pkl
@@ -56,7 +56,7 @@ test_dataset = ECGDataset("test", feature_subset=feature_subset, feature_opt=fea
 test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False,
                                           sampler=test_dataset.sampler)
 
-model = FC_FeatureNet(num_classes=num_classes, feature_len=train_dataset.feature_len).to(device)
+model = MLP1Layer(in_size=train_dataset.feature_len, hidden_size=128, out_size=num_classes).to(device)
 
 num_of_iteration = len(train_dataset) // batch_size
 

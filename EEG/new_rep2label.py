@@ -7,7 +7,7 @@ from torch import nn, optim
 from tqdm import tqdm
 from sklearn.metrics import r2_score
 from sklearn.metrics import mean_squared_error as mse
-from networks import HSICClassifier, multi_FC_FeatureNet, Rep2Label, OneFC
+from networks import MLP2Layer
 from datasets import init_gap_datasets
 from utils.train_utils import get_device, generate_gap, calc_save_perf_metrics, run_params
 from features import feature_names_len_from_subset
@@ -106,7 +106,7 @@ for idx in range(5):
     gap_train_loader, gap_val_loader, gap_test_loader = init_gap_datasets(idx=idx, oversample=oversample_gap,
                                                                           batch_size=batch_size, modes=['train', 'val', 'test'])
 
-    rep2label_model = Rep2Label(num_classes=num_classes, in_size=rep_size).to(device)
+    rep2label_model = MLP2Layer(in_size=rep_size, hidden_size1=256, hidden_size2=32, out_size=num_classes).to(device)
 
     optimizer = optim.Adam(rep2label_model.parameters(), lr=lr_rep2label, weight_decay=1e-6)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, eta_min=lr_rep2label / 100, T_max=num_epochs_rep2label)

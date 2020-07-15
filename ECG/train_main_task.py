@@ -13,7 +13,6 @@ from hsic import HSICLoss
 from ECG.train.train_utils import get_device
 from networks import HSICClassifier
 
-
 lambda_hsic = 500
 cuda_id = str(2)
 

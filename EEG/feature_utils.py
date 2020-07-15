@@ -47,7 +47,7 @@ def feature_names_len_from_subset(features_subsets):
         names_list += feature_names
     names_list = list(dict.fromkeys(names_list))  # remove dups
     feature_len = len(names_list)
-    # Note that len(names_list) > feature_len, because of signal_name...
+    # Note that len(names_list) > in_size, because of signal_name...
     return feature_len, names_list
 
 

@@ -10,7 +10,7 @@ from sklearn.metrics import r2_score, f1_score, precision_recall_fscore_support
 from sklearn.metrics import mean_squared_error as mse
 
 from ECG.train.datasets import GapDataset, create_dataloaders
-from networks import HSICClassifier, multi_FC_FeatureNet, OneFC
+from networks import HSICClassifier, MLP2Layer, MLP1Layer
 from ECG.train.train_utils import get_device, generate_gap
 import ECG.feature_utils as futil
 
@@ -31,7 +31,7 @@ lr = 1e-3
 num_epochs = 40
 num_classes = 3
 rep_size = 512
-
+oversample_weights = '50'
 
 print(f'{file_name}: Starting post train analysis')
 file_dir = os.path.join(os.getcwd(), 'saved_models', file_name)
@@ -221,7 +221,7 @@ curr_df = train_loader.dataset.real_features
 for index, subset in enumerate(subset_list):
 
     num_features2predict = len(subset)
-    feature_predictor = multi_FC_FeatureNet(rep_size=rep_size, out_size=num_features2predict).to(device)
+    feature_predictor = MLP2Layer(in_size=rep_size, hidden_size1=128, hidden_size2=128, out_size=num_features2predict).to(device)
     optimizer = optim.Adam(feature_predictor.parameters(), lr=lr, weight_decay=1e-6)
     best_r2 = -1e8
     for epoch in range(1, num_epochs + 1):
@@ -372,7 +372,7 @@ if need_rep2label:
         test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False,
                                                   sampler=test_dataset.sampler)
 
-        haifa_model = OneFC(num_classes=3, rep_size=rep_size).to(device)
+        haifa_model = MLP1Layer(in_size=rep_size, hidden_size=rep_size, out_size=num_classes).to(device)
 
         num_of_iteration = (len(train_dataset) // batch_size) + 1
         num_of_val_iteration = (len(val_dataset) // batch_size) + 1

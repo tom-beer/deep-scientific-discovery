@@ -171,118 +171,32 @@ class HSICClassifier(nn.Module):
         return logits, cam, gap
 
 
-class FC_FeatureNet(nn.Module):
-    def __init__(self, num_classes, feature_len=0):
-        super(FC_FeatureNet, self).__init__()
-        hidden_layer_size = 128
-
+class MLP1Layer(nn.Module):
+    def __init__(self, in_size, hidden_size, out_size):
+        super(MLP1Layer, self).__init__()
         self.relu = nn.ReLU()
-        self.fc_layer1 = nn.Linear(in_features=feature_len, out_features=hidden_layer_size, bias=True)
-        self.fc_layer2 = nn.Linear(in_features=hidden_layer_size, out_features=num_classes, bias=True)
+        self.fc_layer1 = nn.Linear(in_features=in_size, out_features=hidden_size, bias=True)
+        self.fc_layer2 = nn.Linear(in_features=hidden_size, out_features=out_size, bias=True)
 
-    def forward(self, x, features=None):
+    def forward(self, x):
         x = self.fc_layer1(x)
         rep = self.relu(x)
         x = self.fc_layer2(rep)
         return x, rep
 
 
-class multi_FC_FeatureNet(nn.Module):
-    def __init__(self, rep_size=512, out_size=17):
-        super(multi_FC_FeatureNet, self).__init__()
-        hidden_layer_size = 128
-
-        self.out_size = out_size
+class MLP2Layer(nn.Module):
+    def __init__(self, in_size, hidden_size1, hidden_size2, out_size):
+        super(MLP2Layer, self).__init__()
         self.relu = nn.ReLU()
-        self.fc_layer1 = nn.Linear(in_features=rep_size, out_features=hidden_layer_size, bias=True)
-        self.fc_layer2 = nn.Linear(in_features=hidden_layer_size, out_features=hidden_layer_size, bias=True)
-        self.fc_layer3 = nn.Linear(in_features=hidden_layer_size, out_features=out_size, bias=True)
+        self.fc_layer1 = nn.Linear(in_features=in_size, out_features=hidden_size1, bias=True)
+        self.fc_layer2 = nn.Linear(in_features=hidden_size1, out_features=hidden_size2, bias=True)
+        self.fc_layer3 = nn.Linear(in_features=hidden_size2, out_features=out_size, bias=True)
 
-    def forward(self, x, features=None):
-        x = self.fc_layer1(x)
-        x = self.relu(x)
-        x = self.fc_layer2(x)
-        rep = self.relu(x)
-        x = self.fc_layer3(rep)
-
-        return x
-
-
-class External_to_class(nn.Module):
-    def __init__(self, feature_len=12, num_classes=3):
-        super(External_to_class, self).__init__()
-        hidden_layer_size1 = 36
-        hidden_layer_size2 = 128
-        hidden_layer_size3 =64
-
-        self.relu = nn.ReLU()
-        self.fc_layer1 = nn.Linear(in_features=feature_len, out_features=hidden_layer_size1, bias=True)
-        self.fc_layer2 = nn.Linear(in_features=hidden_layer_size1, out_features=hidden_layer_size2, bias=True)
-        self.fc_layer3 = nn.Linear(in_features=hidden_layer_size2, out_features=hidden_layer_size1, bias=True)
-        self.fc_layer4 = nn.Linear(in_features=hidden_layer_size1, out_features=hidden_layer_size3, bias=True)
-        self.fc_layer5 = nn.Linear(in_features=hidden_layer_size3, out_features=num_classes, bias=True)
-
-    def forward(self, x, features=None):
-        x = self.fc_layer1(x)
-        x = self.relu(x)
-        x = self.fc_layer2(x)
-        x = self.relu(x)
-        x = self.fc_layer3(x)
-        x = self.relu(x)
-        rep = self.fc_layer4(x)
-        x = self.fc_layer5(rep)
-
-        return x, rep
-
-
-class OneFC(nn.Module):
-    def __init__(self, rep_size=12, num_classes=3):
-        super(OneFC, self).__init__()
-
-        self.relu = nn.ReLU()
-        self.fc_layer1 = nn.Linear(in_features=rep_size, out_features=num_classes, bias=True)
-        self.fc_layer0 = nn.Linear(in_features=rep_size, out_features=rep_size, bias=True)
-
-    def forward(self, x, features=None):
-        x = self.fc_layer0(x)
-        x = self.relu(x)
-        x = self.fc_layer1(x)
-
-        return x
-
-
-class Rep2Label(nn.Module):
-    def __init__(self, in_size=512, num_classes=3):
-        super(Rep2Label, self).__init__()
-        self.relu = nn.ReLU()
-        self.fc_layer1 = nn.Linear(in_features=in_size, out_features=256, bias=True)
-        self.fc_layer2 = nn.Linear(in_features=256, out_features=32, bias=True)
-        self.fc_layer3 = nn.Linear(in_features=32, out_features=num_classes, bias=True)
-
-    def forward(self, x, features=None):
+    def forward(self, x):
         x = self.fc_layer1(x)
         x = self.relu(x)
         x = self.fc_layer2(x)
         x = self.relu(x)
         x = self.fc_layer3(x)
         return x
-
-
-class FCFeatureNet(nn.Module):
-    def __init__(self, num_classes, feature_len=0):
-        super(FCFeatureNet, self).__init__()
-        hidden_layer_size = 128
-
-        self.relu = nn.ReLU()
-        self.fc_layer1 = nn.Linear(in_features=feature_len, out_features=hidden_layer_size, bias=True)
-        self.fc_hidden_layer = nn.Linear(in_features=hidden_layer_size, out_features=hidden_layer_size, bias=True)
-        self.fc_layer2 = nn.Linear(in_features=hidden_layer_size, out_features=num_classes, bias=True)
-
-    def forward(self, x, features=None):
-        x = self.fc_layer1(x)
-        x = self.relu(x)
-        x = self.fc_hidden_layer(x)
-        rep = self.relu(x)
-        x = self.fc_layer2(rep)
-
-        return x, rep

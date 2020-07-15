@@ -24,7 +24,7 @@ class ECGDataset(Dataset):
     def __init__(self, mode, feature_subset='all', feature_opt=None, oversample=False, is_baseline=False,
                  less_normal=False, file_name=None, with_cam=False, naf=False):
         self.feature_subset = feature_subset
-        data_dir = 'data/data_ds/training'
+        data_dir = os.path.join('data', 'training')
 
         dataset_path = os.path.join(data_dir, mode)
 
@@ -128,7 +128,7 @@ class ECGDataset(Dataset):
                 feature_rep = self.features_rep.loc[signal_name].values.astype('float32')
                 # trying concat of original feature after neural representation
                 # feature_rep = np.hstack([feature_rep, feature])
-                # self.feature_len = self.feature_len + len(real_feature)
+                # self.in_size = self.in_size + len(real_feature)
 
             else:
                 feature_rep = feature
@@ -241,15 +241,12 @@ class GapDataset(Dataset):
 
 
 class FeatureDataset(Dataset):
-    def __init__(self, mode, included_subset='rr', excluded_subset='p_wave', ds=True):
+    def __init__(self, mode, included_subset='rr', excluded_subset='p_wave'):
 
         assert(included_subset in ['rr', 'p_wave'])  # implement otherwise if necessary
         assert(excluded_subset in ['rr', 'p_wave'])  # implement otherwise if necessary
+        data_dir = 'data/training'
 
-        if ds:
-            data_dir = 'data/data_ds/training'
-        else:
-            data_dir = 'data/data_orig/training'
         dataset_path = os.path.join(data_dir, f'{mode}')
 
         self.df = pd.read_csv(os.path.join(data_dir, 'features_normalized.csv'), index_col=[0]).fillna(-1)

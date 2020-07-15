@@ -8,7 +8,7 @@ from tqdm import tqdm
 from sklearn.metrics import r2_score
 from sklearn.metrics import mean_squared_error as mse
 
-from networks import HSICClassifier, Rep2Label, OneFC
+from networks import HSICClassifier, MLP1Layer, MLP2Layer
 from EEG.datasets import init_datasets, GapDataset, change_sampler
 from EEG.train_utils import generate_gap_internal, col_names_to_idx
 from EEG.feature_utils import feature_names_len_from_subset
@@ -160,8 +160,7 @@ if __name__ == "__main__":
     r2_list = []
 
     features_len, subset = feature_names_len_from_subset(features_subset)
-    # feature_predictor = multi_FC_FeatureNet(rep_size=rep_size, out_size=features_len).to(device)
-    feature_predictor = OneFC(in_size=rep_size, num_classes=features_len).to(device)
+    feature_predictor = MLP1Layer(in_size=rep_size, hidden_size=rep_size, out_size=features_len).to(device)
     optimizer = optim.Adam(feature_predictor.parameters(), lr=lr_features, weight_decay=1e-6)
     criterion = nn.MSELoss()
     curr_df = train_loader.dataset.features[subset]
@@ -252,7 +251,7 @@ if need_rep2label:
         test_dataset = GapDataset(mode="test", idx=idx)
         test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
 
-        rep2label_model = Rep2Label(num_classes=num_classes, in_size=rep_size).to(device)
+        rep2label_model = MLP2Layer(in_size=rep_size, hidden_size1=256, hidden_size2=32, out_size=num_classes).to(device)
 
         optimizer = optim.Adam(rep2label_model.parameters(), lr=lr_rep2label, weight_decay=1e-6)
         scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, eta_min=lr_rep2label / 100, T_max=num_epochs_rep2label)

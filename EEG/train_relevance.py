@@ -4,7 +4,7 @@ import torch
 import torch.utils.data
 from torch import nn, optim
 from tqdm import tqdm
-from networks import FCFeatureNet
+from networks import MLP1Layer
 from EEG.datasets import init_datasets
 from EEG.feature_utils import feature_names_len_from_subset
 from EEG.train_utils import get_device, calc_save_perf_metrics
@@ -37,8 +37,7 @@ train_loader, val_loader, test_loader = init_datasets(num_patients=num_patients,
                                                       one_slice=one_slice, task=task, low_sp=low_sp,
                                                       oversample=oversample, normalize_signals=False)
 feature_len = feature_names_len_from_subset(features_subset)[0]
-model = FCFeatureNet(num_classes=num_classes, feature_len=feature_len).to(device)
-# model = multi_FC_FeatureNet(rep_size=feature_len, out_size=num_classes)
+model = MLP1Layer(in_size=feature_len, hidden_size=128, out_size=num_classes).to(device)
 
 optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=0)
 criterion = nn.CrossEntropyLoss()
