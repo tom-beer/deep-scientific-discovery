@@ -15,7 +15,11 @@ This repository contains code for the paper [Using Deep Networks for Scientific 
 ### To apply the method on your task
 Integrate HSICClassifier from networks.py and HSICLoss from hsic.py in your classification task
 
-### To run the ECG experiments
+### 🫀 To run the ECG experiments
+1. Download and preprocess the PhysioNet 2017 data by running
+```python
+python ECG/prepare_dataset.py
+```
 ### 🧠 To run the EEG experiments
 <details>
   <summary><b>Details</b></summary>
@@ -25,4 +29,3 @@ Integrate HSICClassifier from networks.py and HSICLoss from hsic.py in your clas
 </details>
 
 ## Requirements
-:anatomical_heart:
