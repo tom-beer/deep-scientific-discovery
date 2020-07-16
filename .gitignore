@@ -4,3 +4,4 @@ ECG/data/*
 EEG/shhs/*
 EEG/data/*
 EEG/saved_models/*/*gap*
+.__pycache__/*
