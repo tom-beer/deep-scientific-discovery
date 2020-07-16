@@ -235,10 +235,10 @@ def plot_cam_template(file_name, noise_lim_sec=0.):
 
     # Dirty patch..first is for running from this script, second is for running from one folder up
     try:
-        with open(os.path.join(os.getcwd(), '..', 'saved_models', file_name, f'figure_data_noise={noise_lim_sec}.pkl'), 'rb') as h:
+        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'saved_models', file_name, f'figure_data_noise={noise_lim_sec}.pkl'), 'rb') as h:
             save_data = pkl.load(h)
     except:
-        with open(os.path.join(os.getcwd(), 'saved_models', file_name, f'figure_data_noise={noise_lim_sec}.pkl'), 'rb') as h:
+        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'saved_models', file_name, f'figure_data_noise={noise_lim_sec}.pkl'), 'rb') as h:
             save_data = pkl.load(h)
 
     templates = save_data['cam_mat']
@@ -297,7 +297,7 @@ def get_global_template(file_name, cam_target=1, label='af', feature_subset='rr'
 
     model = HSICClassifier(num_classes=3, feature_len=test_dataset.feature_len, feature_opt=feature_opt, gap_norm_opt='batch_norm')
 
-    main_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+    main_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir))
     model_to_load = f'{file_name}_params.pkl'
 
     model.load_state_dict(torch.load(os.path.join(main_dir, 'saved_models', file_name, model_to_load), map_location='cpu'))
@@ -362,7 +362,8 @@ def get_global_template(file_name, cam_target=1, label='af', feature_subset='rr'
                  'after': after,
                  'list_signal_names': list_signal_names}
 
-    with open(os.path.join(os.getcwd(), os.pardir, 'saved_models', file_name, f'figure_data_noise={noise_lim_sec}_pval.pkl'), 'wb') as h:
+    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)),  os.pardir, 'saved_models', file_name,
+                           f'figure_data_noise={noise_lim_sec}_pval.pkl'), 'wb') as h:
         pkl.dump(save_data, h, protocol=pkl.HIGHEST_PROTOCOL)
     return cam_mat, sig_mat, before, after
 

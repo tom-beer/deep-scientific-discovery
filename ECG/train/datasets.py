@@ -22,12 +22,11 @@ def single_rr(sig):
 class ECGDataset(Dataset):
 
     def __init__(self, mode, feature_subset='all', feature_opt=None, oversample=False, is_baseline=False,
-                 less_normal=False, file_name=None, with_cam=False, naf=False):
+                 less_normal=False, file_name=None, naf=False):
         self.feature_subset = feature_subset
         data_dir = os.path.join('data', 'training')
 
-        dataset_path = os.path.join(data_dir, mode)
-
+        dataset_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'data', 'training', mode)
         # These options are called only from plot_utils.py, so need to go 1 folder up
         if (oversample == 'af') or (oversample == 'normal'):
             main_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
@@ -38,14 +37,11 @@ class ECGDataset(Dataset):
         self.labels = pd.DataFrame.from_dict(data=json_dict, orient='index')
         self.labels = self.labels.reset_index()
         self.labels = self.labels.rename(columns={'index': 'signal', 0: 'target'})
-        # excluding noisy
-        if less_normal:
-            self.change_labels(file_name, mode)
+
         if naf:
+            # unify normal and other classes to label=0, AF is label=1
             self.labels.loc[self.labels.target == 2, 'target'] = 0
 
-        if with_cam:
-            self.get_cams(file_name, mode)
         self.labels = self.labels[self.labels.target != 3]
 
         if oversample == 'af':
@@ -137,12 +133,6 @@ class ECGDataset(Dataset):
 
     def __len__(self):
         return self.dataset_size
-
-    def get_cams(self, file_name, mode):
-        with open(os.path.join(file_name, f'{file_name}_ucam_{mode}.pkl'), 'wb') as handle:
-            cams = pkl.load(handle, protocol=pkl.HIGHEST_PROTOCOL)
-        self.cams = cams
-        # todo: still need to update carefully in get item and all the following enumerators
 
     def balance_classes(self):
         total = len(self.labels)

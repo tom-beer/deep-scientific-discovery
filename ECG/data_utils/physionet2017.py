@@ -19,7 +19,7 @@ import scipy.io as sio
 from scipy import interpolate
 
 # Local imports
-from data_utils import DATA_DIR
+from ECG.data_utils import DATA_DIR
 
 
 class Physionet2017DB(object):

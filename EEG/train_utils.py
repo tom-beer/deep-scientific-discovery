@@ -22,7 +22,7 @@ def get_device(cuda_id):
 
 
 def save_test_perf(results_dict, file_name):
-    save_name = os.path.join('saved_models', file_name, f'{file_name}_test_perf.pkl')
+    save_name = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'saved_models', file_name, f'{file_name}_test_perf.pkl')
     with open(save_name, 'wb') as f:
         pkl.dump(results_dict, f, protocol=pkl.HIGHEST_PROTOCOL)
     return
@@ -103,7 +103,7 @@ def update_gap_dict(sig_names, gap, gap_dict):
 
 
 def generate_gap(file_name, device, num_patients, task, batch_size, normalize_signals, features_subset, gap_norm_opt):
-    file_dir = os.path.join('saved_models', file_name)
+    file_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'saved_models', file_name)
     file_path = os.path.join(file_dir, f'{file_name}_ugap_test.pkl')
     if not os.path.exists(file_path):
         num_classes = 2 if 'rem' in task.lower() else 5

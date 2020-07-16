@@ -7,50 +7,43 @@ from torch import nn, optim
 from tqdm import tqdm
 from sklearn.metrics import f1_score
 
+from hsic import HSICLoss
+from networks import HSICClassifier
 from ECG.train.learning_rate_schedulers import AnnealingRestartScheduler
 from ECG.train.datasets import create_dataloaders
-from hsic import HSICLoss
 from ECG.train.train_utils import get_device
-from networks import HSICClassifier
 
 lambda_hsic = 500
-cuda_id = str(2)
+cuda_id = 2
 
-file_name = f"lambda_{lambda_hsic}_rr_naf_hsic_nocat"
 torch.manual_seed(42)
 feature_opt = 'HSIC+Concat'  # 'HSIC+Concat'  # {'None', 'Concat', 'HSIC', 'HSIC+Concat'}
 feature_subset = 'rr'
 gap_norm_opt = 'batch_norm'
+exp_name = f"lambda_{lambda_hsic}_rr_naf_hsic_nocat"
 
 naf = True
 
-update_batch_size = False
 update_lambda = True
 
-init_sigma_gap = 1
 lr = 0.001
 num_epochs = 70
 epoch2save = 0
 in_channels_ = 1
-num_classes = 3
+num_classes = 2
 log_interval = 1079
-
 batch_size = 48
 
-if update_batch_size:
-    batch_size = 16
-
-file_dir = os.path.join('saved_models', file_name)
+file_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'saved_models', exp_name)
 if not os.path.exists(file_dir):
     os.mkdir(file_dir)
 
 device = get_device(cuda_id)
-base_dir = ".."
 
 train_loader, val_loader, _ = create_dataloaders(batch_size, feature_subset, feature_opt, naf)
 
-model = HSICClassifier(num_classes=num_classes, feature_len=train_loader.dataset.feature_len, feature_opt=feature_opt,
-                       gap_norm_opt=gap_norm_opt).to(device)
+model = HSICClassifier(num_classes=num_classes, in_channels=1, feature_len=train_loader.dataset.feature_len,
+                       feature_opt=feature_opt, gap_norm_opt=gap_norm_opt).to(device)
 
 optimizer = optim.Adam(model.parameters(), lr=lr, betas=(0.95, 0.99), eps=1e-08, weight_decay=0, amsgrad=False)
 classification_criterion = nn.CrossEntropyLoss()
@@ -61,7 +54,7 @@ lr_scheduler = AnnealingRestartScheduler(lr_min=lr/100, lr_max=lr, steps_per_epo
 lambda_vec = lambda_hsic * np.hstack([np.linspace(0, 1, num_epochs//2), np.ones(num_epochs-num_epochs//2)])
 
 
-def train(train_loader, epoch, sigma_gap, lambda_hsic):
+def train(train_loader, epoch, lambda_hsic):
     model.train()
     train_loss = 0
     correct = 0
@@ -98,13 +91,7 @@ def train(train_loader, epoch, sigma_gap, lambda_hsic):
                 loss_total))
 
         lr_scheduler.on_batch_end_update()
-        if update_batch_size:
-            if epoch == 20:
-                train_loader = torch.utils.data.DataLoader(dataset=train_loader.dataset, batch_size=32, shuffle=False,
-                                                           sampler=train_loader.dataset.sampler)
-            if epoch == 40:
-                train_loader = torch.utils.data.DataLoader(dataset=train_loader.dataset, batch_size=48, shuffle=False,
-                                                           sampler=train_loader.dataset.sampler)
+
         if update_lambda:
             lambda_hsic = lambda_vec[epoch-1]
 
@@ -112,9 +99,8 @@ def train(train_loader, epoch, sigma_gap, lambda_hsic):
     print(f'Training Accuracy: {epoch_accuracy }')
     print('====> Epoch: {} Average loss: {:.4f}'.format(
         epoch, train_loss / len(train_loader.dataset)))
-    print(f'Sigma = {sigma_gap}')
 
-    return train_loader, sigma_gap, lambda_hsic
+    return train_loader, lambda_hsic
 
 
 def validation(perf_dict, epoch):
@@ -159,14 +145,14 @@ def validation(perf_dict, epoch):
         perf_dict['f1']['other'].append(f1_total[2])
 
         if (epoch_accuracy >= np.max(perf_dict['accuracy'])):
-            torch.save(model.state_dict(), os.path.join(file_dir, f'{file_name}_params.pkl'))
+            torch.save(model.state_dict(), os.path.join(file_dir, f'{exp_name}_params.pkl'))
             print(['Saved @  ' + str(epoch_accuracy) + '%'])
 
     print('====> Validation set loss: {:.5f}'.format(val_loss))
     print('Validation accuracy: {:.4f}'.format(epoch_accuracy))
     print(f'Validation F1: {f1_total[0]}, {f1_total[1]}, {(f1_total[2])}')
 
-    with open(os.path.join(file_dir, f'{file_name}_perf_dict.pkl'), 'wb') as handle:
+    with open(os.path.join(file_dir, f'{exp_name}_perf_dict.pkl'), 'wb') as handle:
         pkl.dump(perf_dict, handle, protocol=pkl.HIGHEST_PROTOCOL)
 
     return perf_dict
@@ -174,10 +160,9 @@ def validation(perf_dict, epoch):
 
 if __name__ == "__main__":
     perf_dict = {'accuracy': [], 'f1': {'normal': [], 'af': [], 'other': []}}
-    print(file_name)
-    sigma_gap = init_sigma_gap
+    print(exp_name)
     for epoch in range(1, num_epochs + 1):
-        train_loader, sigma_gap, lambda_hsic = train(train_loader, epoch, sigma_gap, lambda_hsic)
+        train_loader, lambda_hsic = train(train_loader, epoch, lambda_hsic)
         perf_dict = validation(perf_dict, epoch)
         lr_scheduler.on_epoch_end_update(epoch=epoch)
-    print(f'{file_name} finished training')
+    print(f'{exp_name} finished training')

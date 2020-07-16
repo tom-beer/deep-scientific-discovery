@@ -17,7 +17,7 @@ from joblib import Parallel, delayed
 from sklearn.model_selection import train_test_split
 
 # Local imports
-from data_utils.ecg import ECG
+from ECG.data_utils.ecgclass import ECGClass
 
 
 class TrainingDataset(object):
@@ -120,8 +120,8 @@ class TrainingDataset(object):
 
         try:
             # Load and process ECG waveform
-            ecg = ECG(file_name=self.labels.loc[idx, 'file_name'], label=self.labels.loc[idx, 'label'],
-                      waveform=self._load_waveform_file(path=path), filter_bands=[3, 45], fs=self.fs)
+            ecg = ECGClass(file_name=self.labels.loc[idx, 'file_name'], label=self.labels.loc[idx, 'label'],
+                           waveform=self._load_waveform_file(path=path), filter_bands=[3, 45], fs=self.fs)
 
             # Set waveform duration
             waveform = self._set_duration(waveform=ecg.filtered)

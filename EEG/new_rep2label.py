@@ -40,7 +40,7 @@ def val_test_rep2label_nogap(rep2label_model, loader, mode, gap_test, file_name,
     assert mode in ['val', 'test']
     if mode == 'test':
         rep2label_model.load_state_dict(
-            torch.load(os.path.join('saved_models', file_name, f'{file_name}_rep2label_params.pkl'), map_location='cpu'))
+            torch.load(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'saved_models', file_name, f'{file_name}_rep2label_params.pkl'), map_location='cpu'))
     rep2label_model.eval()
     correct = 0
     pred_list, label_list = [], []
@@ -67,7 +67,7 @@ def val_test_rep2label_nogap(rep2label_model, loader, mode, gap_test, file_name,
 
         if mode == 'val' and epoch_accuracy >= best_acc:
             best_acc = epoch_accuracy
-            torch.save(rep2label_model.state_dict(), os.path.join('saved_models', file_name, f'{file_name}_rep2label_params.pkl'))
+            torch.save(rep2label_model.state_dict(), os.path.join(os.path.dirname(os.path.realpath(__file__)), 'saved_models', file_name, f'{file_name}_rep2label_params.pkl'))
             print(['Saved @  ' + str(epoch_accuracy) + '%'])
 
     results_dict = calc_save_perf_metrics(labels, preds, epoch_accuracy, mode=mode, file_name=file_name, save=False)
@@ -96,7 +96,7 @@ torch.manual_seed(44)
 num_patients = 1e8
 
 device = get_device(cuda_id)
-file_dir = os.path.join('saved_models', file_name)
+file_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'saved_models', file_name)
 
 gap_train, gap_val, gap_test, rep_size = generate_gap(file_name, device, num_patients, task, batch_size,
                                                       normalize_signals, features_subset, gap_norm_opt)

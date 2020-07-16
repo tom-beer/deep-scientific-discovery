@@ -1,5 +1,5 @@
 """
-ecg.py
+ecgclass.py
 ------
 This module provides classes and functions for processing an ECG waveform.
 By: Sebastian D. Goodfellow, Ph.D., 2018
@@ -15,7 +15,7 @@ from biosppy.signals.tools import filter_signal
 from sklearn.preprocessing import StandardScaler
 
 
-class ECG(object):
+class ECGClass(object):
 
     # Label lookup
     label_lookup = {'N': 0, 'A': 1, 'O': 2, '~': 3}

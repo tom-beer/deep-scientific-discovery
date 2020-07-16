@@ -27,7 +27,7 @@ torch.manual_seed(44)
 
 device = get_device(cuda_id)
 
-file_dir = os.path.join('saved_models', file_name)
+file_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'saved_models', file_name)
 if not os.path.exists(file_dir):
     os.mkdir(file_dir)
 

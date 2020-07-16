@@ -18,7 +18,7 @@ Integrate HSICClassifier from networks.py and HSICLoss from hsic.py in your clas
 ### 🫀 To run the ECG experiments
 1. Download and preprocess the PhysioNet 2017 data by running
 ```python
-python ECG/prepare_dataset.py
+python -m ECG.prepare_dataset
 ```
 ### 🧠 To run the EEG experiments
 <details>

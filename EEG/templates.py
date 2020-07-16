@@ -215,7 +215,7 @@ def get_templates(file_name, oversample, template_opt='spindle', cam_target=2, n
     feature_opt, signal_len, one_slice, dataset_dir = run_params(file_name, features_subset, def_feature_opt='HSIC+Concat',
                                                                  task=task)
     fs = 80 if 'ds' in file_name.lower() else 125
-    file_dir = os.path.join('saved_models', file_name)
+    file_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'saved_models', file_name)
     num_classes = 2 if 'rem' in task.lower() else 5
 
     print(f'Sample Frequency: {fs}')

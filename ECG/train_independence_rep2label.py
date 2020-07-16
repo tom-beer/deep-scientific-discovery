@@ -34,7 +34,7 @@ rep_size = 512
 oversample_weights = '50'
 
 print(f'{file_name}: Starting post train analysis')
-file_dir = os.path.join(os.getcwd(), 'saved_models', file_name)
+file_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),  'saved_models', file_name)
 
 is_baseline = 'baseline' in file_name.lower()
 feature_opt = 'None' if is_baseline else 'HSIC+Concat'

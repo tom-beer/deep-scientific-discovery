@@ -41,7 +41,7 @@ torch.manual_seed(44)
 device = get_device(cuda_id)
 print(f'device: {device}')
 
-file_dir = os.path.join('saved_models', file_name)
+file_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'saved_models', file_name)
 
 
 # def check_hsic(loader, model):
@@ -195,7 +195,7 @@ if need_rep2label:
         assert mode in ['val', 'test']
         if mode == 'test':
             model.load_state_dict(
-                torch.load(os.path.join('saved_models', file_name, f'{file_name}_rep2label_params.pkl'), map_location='cpu'))
+                torch.load(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'saved_models', file_name, f'{file_name}_rep2label_params.pkl'), map_location='cpu'))
         model.eval()
         correct = 0
         pred_list, label_list = [], []
@@ -225,7 +225,7 @@ if need_rep2label:
 
             if mode == 'val' and epoch_accuracy >= best_acc:
                 best_acc = epoch_accuracy
-                torch.save(model.state_dict(), os.path.join('saved_models', file_name, f'{file_name}_rep2label_params.pkl'))
+                torch.save(model.state_dict(), os.path.join(os.path.dirname(os.path.realpath(__file__)), 'saved_models', file_name, f'{file_name}_rep2label_params.pkl'))
                 print(['Saved @  ' + str(epoch_accuracy) + '%'])
 
         results_dict = calc_save_perf_metrics(labels, preds, epoch_accuracy, epoch, mode=mode, file_name=file_name, save=False)

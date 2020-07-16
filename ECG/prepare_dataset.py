@@ -2,9 +2,9 @@ import urllib.request
 import os
 import warnings
 import sys
-from data_utils.physionet2017 import Physionet2017DB
-from data_utils.training_dataset import TrainingDataset
-from data_utils.downsampling import downsample
+from ECG.data_utils.physionet2017 import Physionet2017DB
+from ECG.data_utils.training_dataset import TrainingDataset
+from ECG.data_utils.downsampling import downsample
 sys.path.append('..')
 warnings.filterwarnings('ignore')
 
@@ -42,7 +42,7 @@ duration = 60.
 fs = 300
 
 # Get training dataset
-train_db = TrainingDataset(path_labels=path_labels, path_save=path_save, duration=duration, 
+train_db = TrainingDataset(path_labels=path_labels, path_save=path_save, duration=duration,
                            classes=classes, datasets=datasets, augment=False, fs=fs)
 
 # Generate dataset
