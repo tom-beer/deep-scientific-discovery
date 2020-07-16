@@ -11,7 +11,6 @@ all_feature_names = rr_feature_names + p_wave_feature_names + full_waveform_feat
 
 feature_names = {'rr': rr_feature_names,
                  'p_wave': p_wave_feature_names,
-                 'full_waveform': full_waveform_feature_names,
                  'all': all_feature_names}
 
 

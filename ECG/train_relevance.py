@@ -2,75 +2,46 @@ import os
 import numpy as np
 import torch
 import torch.utils.data
+import pickle as pkl
 from torch import nn, optim
 from tqdm import tqdm
 from sklearn.metrics import f1_score
+
 from networks import MLP1Layer
-from ECG.train.datasets import ECGDataset
-from ECG.feature_utils import update_rep_dict
-import pickle as pkl
+from ECG.train.datasets import create_dataloaders
+from ECG.train.train_utils import get_device
 
-
-feature_subset = 'all'
-run_name = 'test' # f'{feature_subset}_features_to_labels_NAF'
-
-cuda_id = str(2)
+# experiment parameters
+feature_subset = 'rr'
+exp_name = f"relevance_{feature_subset}"
 learn_rep = True
-extract_rep = False
-naf = True
-oversample = '50'
 
+# training parameters
 torch.manual_seed(42)
-
-ds = True
-signal_len = 5400
+cuda_id = 0
 batch_size = 48
-
-
-extracted_rep_file_name = f'{run_name}.pkl'
-param_file_name = f'{run_name}_params.pkl'
-perf_dict_name = f'{run_name}_perf.pkl'
-print(run_name)
-
 num_epochs = 40
-in_channels_ = 1
-num_classes = 2
 lr = 0.005
-is_cuda = True
-if 'Documents' in os.getcwd():  # if running from desktop
-    is_cuda = False
-device = torch.device("cuda:"+cuda_id if is_cuda else "cpu")
-feature_opt = 'Concat'
-base_dir = ".."
 
-train_dataset = ECGDataset("train", feature_subset=feature_subset, feature_opt=feature_opt,
-                           oversample=oversample, naf=naf)
-train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=False,
-                                           sampler=train_dataset.sampler)
-val_dataset = ECGDataset("val", feature_subset=feature_subset, feature_opt=feature_opt,
-                         oversample=oversample, naf=naf)
-val_loader = torch.utils.data.DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=False,
-                                         sampler=val_dataset.sampler)
-test_dataset = ECGDataset("test", feature_subset=feature_subset, feature_opt=feature_opt,
-                          oversample=oversample, naf=naf)
-test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False,
-                                          sampler=test_dataset.sampler)
+# folders and names..
+file_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'saved_models', exp_name)
+if not os.path.exists(file_dir):
+    os.mkdir(file_dir)
+extracted_rep_file_name = os.path.join(file_dir, f'{exp_name}_rep.pkl')
+param_file_name = os.path.join(file_dir, f'{exp_name}_params.pkl')
+perf_dict_name = os.path.join(file_dir, f'{exp_name}_perf.pkl')
+print(exp_name)
 
-model = MLP1Layer(in_size=train_dataset.feature_len, hidden_size=128, out_size=num_classes).to(device)
+device = get_device(cuda_id)
 
-num_of_iteration = len(train_dataset) // batch_size
+feature_opt = 'Concat'  # just so they will be available in ECGDataset
+
+train_loader, val_loader, test_loader = create_dataloaders(batch_size, feature_subset, feature_opt, naf=True)
+
+model = MLP1Layer(in_size=train_loader.dataset.feature_len, hidden_size=128, out_size=2).to(device)
 
 optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=1e-6)
 criterion = nn.CrossEntropyLoss()
-
-
-def extract_rep_dset(loader, rep_dict):
-    for batch_idx, (_, target, feature, _, signal_names, _) in enumerate(tqdm(loader)):
-        target, feature = target.to(device), feature.to(device)
-        _, rep = model(feature)
-
-        rep_dict = update_rep_dict(signal_names, rep, rep_dict)
-    return rep_dict
 
 
 def train(epoch):
@@ -87,8 +58,7 @@ def train(epoch):
         optimizer.step()
 
         class_balance_mean_list.append(target.cpu().numpy().sum()/train_loader.batch_size)
-    print('====> Epoch: {} Average loss: {:.4f}'.format(
-        epoch, train_loss / len(train_loader.dataset)))
+    print(f'====> Epoch: {epoch} Average loss: {train_loss / len(train_loader.dataset):.4f}')
     print(f"Balance in training set is {np.mean(class_balance_mean_list):2.2f}")
     return
 
@@ -166,13 +136,4 @@ if __name__ == "__main__":
             train(epoch)
             accuracy = val(accuracy)
         test()
-    if extract_rep:
-        model.load_state_dict(torch.load(param_file_name, map_location='cpu'))
-        rep_dict = {}
-        rep_dict = extract_rep_dset(train_loader, rep_dict)
-        rep_dict = extract_rep_dset(val_loader, rep_dict)
-        rep_dict = extract_rep_dset(test_loader, rep_dict)
-        with open(extracted_rep_file_name, 'wb') as handle:
-            pkl.dump(rep_dict, handle, protocol=pkl.HIGHEST_PROTOCOL)
-        print(f"Done! Don't forget to move {extracted_rep_file_name} to data_dir")
-    print(run_name)
+    print(exp_name)

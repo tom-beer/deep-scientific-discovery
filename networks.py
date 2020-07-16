@@ -180,9 +180,9 @@ class MLP1Layer(nn.Module):
 
     def forward(self, x):
         x = self.fc_layer1(x)
-        rep = self.relu(x)
-        x = self.fc_layer2(rep)
-        return x, rep
+        x = self.relu(x)
+        x = self.fc_layer2(x)
+        return x
 
 
 class MLP2Layer(nn.Module):
