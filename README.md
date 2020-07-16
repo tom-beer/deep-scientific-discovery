@@ -29,3 +29,5 @@ python -m ECG.prepare_dataset
 </details>
 
 ## Requirements
+
+logo created by [Atif Arshad](https://thenounproject.com/search/?q=ecg&i=1295489) from the Noun Project
