@@ -7,13 +7,13 @@ This repository contains code for the paper [Using Deep Networks for Scientific 
 
 *Bar Eini-Porat, Tom Beer, Uri Shalit, Danny Eytan and Sebastian Goodfellow*
 
-**Machine Learning for Healthcare, MLHC 2020**
+**Proceedings of Machine Learning for Healthcare, 2020**
 
 
 📋 Will be updated soon..
 
 ### To apply the method on your task
-Integrate HSICClassifier from networks.py and HSICLoss from hsic.py in your classification task
+Integrate `HSICClassifier` from `networks.py` and `HSICLoss` from `hsic.py` in your classification task
 
 ### 🫀 To run the ECG experiments
 1. Download and preprocess the PhysioNet 2017 data by running
