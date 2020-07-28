@@ -168,7 +168,7 @@ class HSICClassifier(nn.Module):
         weight_fc_tile = weight_fc.repeat(output.shape[0], 1, 1)
 
         cam = torch.bmm(weight_fc_tile, output)
-        return logits, cam, gap
+        return logits, cam, gap[:, :self.activation_size]
 
 
 class MLP1Layer(nn.Module):

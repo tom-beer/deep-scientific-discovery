@@ -6,6 +6,8 @@ import pickle as pkl
 import glob
 import numpy as np
 
+import ECG.feature_utils as futil
+
 
 def get_device(cuda_id):
     if not isinstance(cuda_id, str):
@@ -33,28 +35,47 @@ def unify_gap(mode, file_dir, file_name):
     return gap_unified
 
 
+def update_subset_list(subset_type, subset_list, included=True, real_features=None):
+
+    if (not included) and (subset_type == 'None'):
+        return
+
+    status = 'included' if included else 'excluded'
+
+    if 'rr' in subset_type:
+        subset = futil.rr_feature_names
+        result_type = f'_rr_{status}'
+    elif 'p_wave' in subset_type:
+        subset = futil.p_wave_feature_names
+        result_type = f'_p_wave_{status}'
+    else:
+        if included:
+            # list(train_loader.dataset.real_features)
+            subset = real_features
+            result_type = ''
+    subset_list.append(subset)
+    return result_type
+
+
 def extract_gap(mode, loader, model, file_dir, file_name, device):
     gap_dict = {}
-    cam_dict = {}
 
     for batch_idx, (data, _, _, _, sig_names, features_rep) in enumerate(loader):
         data, features_rep = data.to(device), features_rep.to(device)
         _, cam, gap = model(data, features_rep)
 
         gap = gap[:, :model.activation_size]
-        update_gap_dict(sig_names, gap, gap_dict, cam, cam_dict)
+        update_gap_dict(sig_names, gap, gap_dict)
 
         with open(os.path.join(file_dir, f'{file_name}_gap_{mode}_{batch_idx}.pkl'), 'wb') as handle:
             pkl.dump(gap_dict, handle, protocol=pkl.HIGHEST_PROTOCOL)
 
         gap_dict = {}
-        cam_dict = {}
 
 
-def update_gap_dict(sig_names, gap, gap_dict, cam, cam_dict):
+def update_gap_dict(sig_names, gap, gap_dict):
     for i in range(len(sig_names)):
         gap_dict[sig_names[i]] = gap[i]
-        cam_dict[sig_names[i]] = cam[i, 2]
 
 
 def generate_gap(train_loader, val_loader, test_loader, model, file_dir, file_name, device):

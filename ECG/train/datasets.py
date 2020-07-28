@@ -21,7 +21,8 @@ def single_rr(sig):
 
 class ECGDataset(Dataset):
 
-    def __init__(self, mode, feature_subset='all', feature_opt=None, oversample=False, is_baseline=False, naf=False):
+    def __init__(self, mode, feature_subset='all', feature_opt=None, oversample=False, is_baseline=False, naf=False,
+                 idxs=None):
 
         self.feature_subset = feature_subset
         self.feature_opt = feature_opt
@@ -29,13 +30,14 @@ class ECGDataset(Dataset):
         self.is_baseline = is_baseline
         self.data_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'data', 'training')
         self.dataset_path = os.path.join(self.data_dir, mode)
+        self.idxs = idxs
 
         # These options are called only from plot_utils.py, so need to go 1 folder up
-        if (oversample == 'af') or (oversample == 'normal'):
-            assert 0  # need to check if this still works..
-            main_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-            dataset_path = os.path.join(main_dir, dataset_path)
-            data_dir = os.path.join(main_dir, data_dir)
+        # if (oversample == 'af') or (oversample == 'normal'):
+            # assert 0  # need to check if this still works..
+            # main_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+            # dataset_path = os.path.join(main_dir, self.dataset_path)
+            # data_dir = os.path.join(main_dir, data_dir)
 
         self.load_labels()
 
@@ -58,7 +60,7 @@ class ECGDataset(Dataset):
         self.load_waveforms()
 
         self.feature_len = 0
-        if oversample not in ['af', 'normal', 'other']:
+        if oversample is not 'none':
             self.sampler = self.balance_classes()
 
         self.load_features()
@@ -90,6 +92,11 @@ class ECGDataset(Dataset):
         self.labels = self.labels.rename(columns={'index': 'signal', 0: 'target'})
         # exclude noisy
         self.labels = self.labels[self.labels.target != 3]
+        self.labels = self.labels.reset_index()
+        self.labels.drop(columns=['index'], inplace=True)
+
+        if self.idxs is not None:
+            self.labels = self.labels.iloc[self.idxs]
 
     def load_waveforms(self):
         self.dataset_size = len(self.labels)
@@ -213,39 +220,6 @@ class GapDataset(Dataset):
         return sampler
 
 
-class FeatureDataset(Dataset):
-    def __init__(self, mode, included_subset='rr', excluded_subset='p_wave'):
-
-        assert(included_subset in ['rr', 'p_wave'])  # implement otherwise if necessary
-        assert(excluded_subset in ['rr', 'p_wave'])  # implement otherwise if necessary
-        data_dir = 'data/training'
-
-        dataset_path = os.path.join(data_dir, f'{mode}')
-
-        self.df = pd.read_csv(os.path.join(data_dir, 'features_normalized.csv'), index_col=[0]).fillna(-1)
-        json_dict = json.load(open(os.path.join(dataset_path, 'labels', 'labels.json')))
-        self.labels = pd.DataFrame.from_dict(data=json_dict, orient='index')
-        self.labels = self.labels.reset_index()
-        self.labels = self.labels.rename(columns={'index': 'signal', 0: 'target'})
-        self.labels = self.labels[self.labels.target != 3]
-        self.labels = self.labels.reset_index()
-        self.labels.drop(columns=['index'], inplace=True)
-
-        self.included_names = futil.rr_feature_names if included_subset == 'rr' else futil.p_wave_feature_names
-        self.excluded_names = futil.rr_feature_names if excluded_subset == 'rr' else futil.p_wave_feature_names
-
-    def __getitem__(self, index):
-        signal_name = self.labels.iloc[index]['signal']
-        signal_name = signal_name.split(sep='_')[0]
-        inc_features = self.df.loc[signal_name, self.included_names].values
-        exc_features = self.df.loc[signal_name, self.excluded_names].values
-
-        return signal_name, inc_features.astype('float32'), exc_features.astype('float32')
-
-    def __len__(self):
-        return len(self.labels)
-
-
 def create_dataloaders(batch_size, feature_subset, feature_opt, naf):
     train_dataset = ECGDataset("train", feature_subset=feature_subset, feature_opt=feature_opt,
                                oversample=False, naf=naf)
@@ -263,3 +237,35 @@ def create_dataloaders(batch_size, feature_subset, feature_opt, naf):
                                               sampler=test_dataset.sampler)
 
     return train_loader, val_loader, test_loader
+
+
+def create_kfoldcv_loaders(batch_size, feature_subset, feature_opt, naf):
+    num_folds = 5
+    kfoldcv_testloaders = []
+    test_dataset = ECGDataset("test", feature_subset=feature_subset, feature_opt=feature_opt,
+                              oversample=False, naf=naf)
+
+    np.random.seed(24)
+    idxs = (np.random.multinomial(1, 0.2 * np.ones(5).ravel(), size=len(test_dataset)) == 1).argmax(1).astype(int)
+
+    for i_fold in range(num_folds):
+        idx_test = idxs == i_fold
+        idx_val = idxs == (i_fold + 1) % 5
+        idx_train = ((idxs == (i_fold + 2) % 5) |
+                     (idxs == (i_fold + 3) % 5) |
+                     (idxs == (i_fold + 4) % 5))
+
+        train_dataset = ECGDataset("test", feature_subset=feature_subset, feature_opt=feature_opt,
+                                   oversample=False, naf=naf, idxs=idx_train)
+        train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=False,
+                                                   sampler=train_dataset.sampler)
+        val_dataset = ECGDataset("test", feature_subset=feature_subset, feature_opt=feature_opt,
+                                 oversample=False, naf=naf, idxs=idx_val)
+        val_loader = torch.utils.data.DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=False,
+                                                 sampler=val_dataset.sampler)
+        test_dataset = ECGDataset("test", feature_subset=feature_subset, feature_opt=feature_opt,
+                                  oversample=False, naf=naf, idxs=idx_test)
+        test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False,
+                                                  sampler=test_dataset.sampler)
+        kfoldcv_testloaders.append((train_loader, val_loader, test_loader))
+    return kfoldcv_testloaders
