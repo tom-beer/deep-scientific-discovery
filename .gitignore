@@ -5,6 +5,7 @@ EEG/shhs/*
 EEG/data/*
 EEG/saved_models/*/*gap*
 ECG/"Results for paper.ipynb"
-.__pycache__/*
+__pycache__/*
 explainer_notebook.ipynb
 .ipynb_checkpoints/*
+
