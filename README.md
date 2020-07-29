@@ -33,11 +33,8 @@ Integrate `HSICClassifier` from `networks.py` and `HSICLoss` from `hsic.py` in y
     ```
     
 ### 🧠 To run the EEG experiments
-<details>
-  <summary><b>Details</b></summary>
-    
-  - one
-  - two
-</details>
+Follow the same steps as in the ECG experiment above, replacing `ECG` with `EEG`
+
+----
 
 logo created by [Atif Arshad](https://thenounproject.com/search/?q=ecg&i=1295489) from the Noun Project
