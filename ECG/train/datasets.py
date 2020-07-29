@@ -157,69 +157,6 @@ class ECGDataset(Dataset):
         return
 
 
-class GapDataset(Dataset):
-    def __init__(self, mode, idx, data_dir=os.path.join(os.getcwd(), 'data', 'held_out_data'), oversample='None',
-                 less_normal=False, file_name=None, naf=False):
-        dataset_path = os.path.join(data_dir, f'{mode}_{idx}.pkl')
-        self.labels = pd.read_pickle(dataset_path)
-
-        if less_normal:
-            with open(os.path.join(file_name, f'{file_name}_{mode}_dropped.pkl'), 'wb') as handle:
-                drop_indices = pkl.load(handle, protocol=pkl.HIGHEST_PROTOCOL)
-            self.labels = self.labels.drop(drop_indices)
-        if naf:
-            self.labels.loc[self.labels.target == 2, 'target'] = 0
-        self.labels = self.labels[self.labels.target != 3]
-
-        self.labels = self.labels.reset_index()
-        self.labels.drop(columns={'index'}, inplace=True)
-        self.dataset_size = len(self.labels)
-
-        self.sampler = None
-
-        self.sampler = self.sampler_func(oversample)
-
-        return
-
-    def __getitem__(self, index):
-        item = self.labels.iloc[index]
-        target = item['target']
-        signal_name = self.labels.iloc[index]['signal']
-
-        return signal_name, target
-
-    def __len__(self):
-        return self.dataset_size
-
-    def sampler_func(self, odds_type):
-        print(f'{odds_type}')
-        total = len(self.labels)
-        self.labels['weights'] = 1
-
-        counts = self.labels.target.value_counts()
-        sampler = None
-        if odds_type.lower() != 'none':
-            if odds_type == '131':
-                self.labels.loc[self.labels.target == 1, 'weights'] = 3
-            elif odds_type == 'balanced':
-                counts = self.labels.target.value_counts()
-                for i in range(3):
-                    self.labels.loc[self.labels.target == i, 'weights'] = total / counts[i]
-            elif odds_type == '25':
-                ratios = np.array([1, 2, 1])
-                for i in range(3):
-                    self.labels.loc[self.labels.target == i, 'weights'] = total / counts[i] * ratios[i]
-            elif odds_type == '50':
-                for i in range(2):
-                    total2 = counts[0] + counts[1]
-                    self.labels.loc[self.labels.target == i, 'weights'] = total2 / counts[i]
-                self.labels.loc[self.labels.target == 2, 'weights'] = 0.0008
-            sampler = WeightedRandomSampler(weights=torch.DoubleTensor(self.labels.weights), replacement=True,
-                                            num_samples=total)
-
-        return sampler
-
-
 def create_dataloaders(batch_size, feature_subset, feature_opt, naf):
     train_dataset = ECGDataset("train", feature_subset=feature_subset, feature_opt=feature_opt,
                                oversample=False, naf=naf)

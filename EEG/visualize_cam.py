@@ -230,9 +230,8 @@ def plot_templates(file_name, cam_target, text_height, before=5., after=5., temp
     print(f'Averaged over {num_patients} patients and {num_templates} detections')
     return fig
 
-def _get_templates(waveform, events, before, after, fs, idx1=0, idx2=5400, noise_lim_sec=0):
 
-    # This is from class_activation_map_template.py
+def _get_templates(waveform, events, before, after, fs, idx1=0, idx2=5400, noise_lim_sec=0):
 
     # convert delimiters to samples
     before = int(before * fs)
@@ -278,8 +277,6 @@ def _get_templates(waveform, events, before, after, fs, idx1=0, idx2=5400, noise
     return templates, events_new
 
 
-# next - 1slice_DS_frequency_lambda600_ls_remNrem_batch
-#   1slice_DS_frequency_lambda20*0.25_lsb_remNrem_20_73
 if __name__ == "__main__":
     file_name = "1slice_DS_Baseline_n_rem"
     extract_results(file_name)

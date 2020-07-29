@@ -1,53 +1,38 @@
 import os
 import pandas as pd
 import pickle as pkl
+import numpy as np
+import torch
 from torch.utils.data.dataset import Dataset
 from torch.utils.data.dataloader import DataLoader
-from tqdm import tqdm
-from EEG.feature_utils import feature_names_len_from_subset, estimate_med_dist, check_if_normalized
-from sklearn.preprocessing import StandardScaler
-import numpy as np
 from torch.utils.data.sampler import WeightedRandomSampler
-import torch
+
+from EEG.feature_utils import feature_names_len_from_subset, estimate_med_dist, check_if_normalized
 
 
 class SHHSDataset(Dataset):
 
-    def __init__(self, mode, num_patients, task, normalize_signals, oversample, dataset_dir='filtered', conv_d=1,
-                 specific_signal=None, features_subset=None, filter_stage=None, one_slice=False, random_flag=False,
-                 num_ch=2, low_sp=False):
+    def __init__(self, mode, task, normalize_signals, balanced_dataset, specific_signal=None, features_subset=None,
+                 filter_stage=None, idxs=None):
         if features_subset is None:
             features_subset = []
 
-        if 'nofilter' in dataset_dir:
-            fs = 125
-        elif 'filtered' in dataset_dir:
-            fs = 80
-        else:
-            fs = 80
-        data_dir = os.path.join(os.getcwd(), 'shhs', 'preprocessed', 'shhs1', dataset_dir)
+        fs = 80
+        eeg_proj_dir = os.path.dirname(os.path.realpath(__file__))
+        data_dir = os.path.join(eeg_proj_dir, 'shhs', 'preprocessed', 'shhs1', 'ALL0.05')
         if specific_signal is not None:
             s = specific_signal.split('_')
             sig_names, slice = [s[0]], int(s[1])
         else:
-            sig_names = pkl.load(open(os.path.join(os.getcwd(), 'shhs', 'results', dataset_dir, f'names_{mode}.pkl'), 'rb'))
+            sig_names = pkl.load(open(os.path.join(eeg_proj_dir, 'shhs', 'results', 'ALL0.05', f'names_{mode}.pkl'), 'rb'))
 
-        sig_names = sig_names[:int(num_patients)]
         self.waveforms, self.eog, self.emg, self.labels, self.features = {}, {}, {}, {}, {}
-        self.load_features(features_subset, random_flag, low_sp, num_ch)
+        self.load_features(features_subset)
         self.train_std = 23.24
         self.normalize_signals = normalize_signals
 
-        self.sscaler = StandardScaler()
-        for sig_name in tqdm(sig_names):
-            if dataset_dir == 'eog0.05':
-                # sigs, eogs, labels = pkl.load(open(os.path.join(data_dir, f'shhs1-{sig_name}.p'), 'rb'))
-                raise NotImplementedError
-            elif dataset_dir == 'ALL0.05':
-                sigs, eogs, emgs, labels = pkl.load(open(os.path.join(data_dir, f'shhs1-{sig_name}.p'), 'rb'))
-
-            else:
-                sigs, labels = pkl.load(open(os.path.join(data_dir, f'shhs1-{sig_name}.p'), 'rb'))
+        for sig_name in sig_names:
+            sigs, eogs, emgs, labels = pkl.load(open(os.path.join(data_dir, f'shhs1-{sig_name}.p'), 'rb'))
 
             assert sigs.shape[0] == labels.shape[0]
             num_slices = sigs.shape[0]
@@ -56,11 +41,7 @@ class SHHSDataset(Dataset):
 
             if specific_signal is not None:
                 sig = sigs[slice, :, :].astype('float32')
-                if dataset_dir != 'eog0.05':
-                    sig = sig[:, fs*60:-30*fs] if one_slice else sig
-
-                if num_ch == 1:
-                    sig = np.reshape(sig[0, :], (1, -1))
+                sig = sig[:, fs*60:-30*fs]
 
                 self.waveforms[f'{sig_name}_{slice}'] = sig
                 self.labels[f'{sig_name}_{slice}'] = labels[slice]
@@ -69,43 +50,25 @@ class SHHSDataset(Dataset):
                 for i in range(num_slices):
 
                     sig = sigs[i, :, :].astype('float32')
+                    eog = eogs[i, :, :].astype('float32')
+                    emg = emgs[i, :, :].astype('float32')
 
-                    if dataset_dir == 'eog0.05':
-                        eog = eogs[i, :, :].astype('float32')
-                        self.eog[f'{sig_name}_{i}'] = eog
+                    self.eog[f'{sig_name}_{i}'] = eog
+                    self.emg[f'{sig_name}_{i}'] = emg
 
-                    elif dataset_dir == 'ALL0.05':
-                        eog = eogs[i, :, :].astype('float32')
-                        emg = emgs[i, :, :].astype('float32')
-
-                        self.eog[f'{sig_name}_{i}'] = eog
-                        self.emg[f'{sig_name}_{i}'] = emg
-
-                    else:
-                        sig = sig[:, fs*60:-30*fs] if one_slice else sig
-
-                    if num_ch == 1:
-                        sig = np.reshape(sig[0, :], (1, -1))
-
-                    # sig = sscaler.fit_transform(sig)
                     self.waveforms[f'{sig_name}_{i}'] = sig
                     self.labels[f'{sig_name}_{i}'] = labels[i]
-
-                if conv_d == 2:
-                    sig = sig.reshape(1, sig.shape[0], sig.shape[1])
 
         self.labels = pd.DataFrame.from_dict(self.labels, orient='index')
         self.labels = self.labels.reset_index()
         self.labels = self.labels.rename(columns={'index': 'signal_name', 0: 'target'})
+        if idxs is not None:
+            self.labels = self.labels.iloc[idxs]
 
-        # if mode == 'train':
-        #     self.sscaler.fit_transform()
-
-        if 'wake_rem' == task:      # wake vs rem -
+        if task == 'wake_rem':
             self.labels = self.labels.loc[(self.labels.target == 0) | (self.labels.target == 4)]
             self.labels.loc[self.labels.target == 4, 'target'] = 1
-        elif 'rem_nrem' == task:        # rem vs nrem check emg or eog
-            # self.labels = self.labels.loc[self.labels.target != 0] # todo: change back
+        elif task == 'rem_nrem':
             self.labels.loc[self.labels.target != 4, 'target'] = 0
             self.labels.loc[self.labels.target == 4, 'target'] = 1
 
@@ -113,7 +76,7 @@ class SHHSDataset(Dataset):
             self.labels = self.labels[self.labels.target == filter_stage]
             self.labels = self.labels.reset_index()
         self.dataset_size = len(self.labels)
-        self.sampler = sampler_func(oversample, self.labels)
+        self.sampler = balance_classes(balanced_dataset, self.labels)
 
     def __getitem__(self, index, random_flag=False):
         item = self.labels.iloc[index]
@@ -132,27 +95,13 @@ class SHHSDataset(Dataset):
     def __len__(self):
         return self.dataset_size
 
-    def mini_dataset(self):
-
-        data_list = []
-        for i in range(5):
-            data_list.append(self.labels[self.labels.target == i].sample(n=1000, random_state=42))
-        df = pd.concat(data_list)
-        df.reset_index()
-        self.labels = df
-        self.dataset_size = len(self.labels)
-
-    def load_features(self, features_subset, random_flag, low_sp, num_ch):
-        # assert (low_sp or 'sw' not in features_subset)  # want low sp and sw? need to merge
+    def load_features(self, features_subset):
 
         self.feature_len, feature_names = feature_names_len_from_subset(features_subset)
-        feature_file_name = get_feature_file_name(low_sp=low_sp, num_ch=num_ch)
-        self.features = pkl.load(open(os.path.join(os.getcwd(), 'shhs', 'preprocessed', 'features',
-                                                    feature_file_name), 'rb'))
-        self.features.set_index('signal_name', inplace=True)
+        feature_file_name = 'frequency_relative.pkl'
+        self.features = pkl.load(open(os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                                   'shhs', 'preprocessed', 'features', feature_file_name), 'rb'))
         self.features = self.features[feature_names]
-        if random_flag:
-            self.features = np.random.rand(self.features.shape[0], self.features.shape[1])
         if self.feature_len > 0:
             self.med_dist = estimate_med_dist(self.features, percentile=50)
         else:
@@ -160,28 +109,13 @@ class SHHSDataset(Dataset):
         check_if_normalized(self.features)
         return self
 
-    # def sampler_func(self, resample):
-    #     total = len(self.labels)
-    #     self.labels['weights'] = 1
-    #
-    #     counts = self.labels.target.value_counts()
-    #     sampler = None
-    #     if resample:
-    #         for i in range(2):
-    #             total2 = counts[0] + counts[1]
-    #             self.labels.loc[self.labels.target == i, 'weights'] = total2 / counts[i]
-    #
-    #         sampler = WeightedRandomSampler(weights=torch.DoubleTensor(self.labels.weights), replacement=True,
-    #                                         num_samples=total)
-    #     return sampler
-
     def unnormalize_signal(self, signal):
         if self.normalize_signals:
             signal = signal * self.train_std
         return signal
 
 
-def sampler_func(oversample, labels):
+def balance_classes(oversample, labels):
     total = len(labels)
     labels['weights'] = 1
 
@@ -198,27 +132,23 @@ def sampler_func(oversample, labels):
 
 
 def change_sampler(loader, new_state=False):
-    sampler = loader.dataset.sampler_func(resample=new_state)
+    sampler = loader.dataset.balance_classes(resample=new_state)
     loader = DataLoader(dataset=loader.dataset, batch_size=loader.batch_size, shuffle=False,
                         sampler=sampler)
     return loader
 
 
-def init_datasets(task, oversample, normalize_signals, num_patients=200, dataset_dir='filtered0.05', batch_size=32,
-                  conv_d=1, features_subset=None, one_slice=False, modes=None, random_flag=False, num_ch=2,
-                  low_sp=False, filter_stage=None):
+def init_datasets(task, balanced_dataset, normalize_signals=True, batch_size=32, features_subset=None, modes=None, filter_stage=None):
     if features_subset is None:
         features_subset = []
     if modes is None:
         modes = ['train', 'val', 'test']
     for mode in modes:
-        assert mode in ['train', 'val', 'test']  # Check your spelling!
+        assert mode in ['train', 'val', 'test']
     loaders = []
     if 'train' in modes:
-        train_dataset = SHHSDataset(mode="train", num_patients=num_patients, dataset_dir=dataset_dir, conv_d=conv_d,
-                                    features_subset=features_subset, one_slice=one_slice, random_flag=random_flag,
-                                    num_ch=num_ch, low_sp=low_sp, filter_stage=filter_stage, task=task,
-                                    oversample=oversample, normalize_signals=normalize_signals)
+        train_dataset = SHHSDataset(mode="train", features_subset=features_subset, filter_stage=filter_stage, task=task,
+                                    balanced_dataset=balanced_dataset, normalize_signals=normalize_signals)
         shuffle = True
         if train_dataset.sampler is not None:
             shuffle = False
@@ -226,18 +156,14 @@ def init_datasets(task, oversample, normalize_signals, num_patients=200, dataset
         loaders += [train_loader]
 
     if 'val' in modes:
-        val_dataset = SHHSDataset(mode="valid", num_patients=num_patients, dataset_dir=dataset_dir, conv_d=conv_d,
-                                  features_subset=features_subset, one_slice=one_slice, random_flag=random_flag,
-                                  num_ch=num_ch, low_sp=low_sp, filter_stage=filter_stage, task=task,
-                                  oversample=oversample, normalize_signals=normalize_signals)
+        val_dataset = SHHSDataset(mode="valid", features_subset=features_subset, filter_stage=filter_stage, task=task,
+                                  balanced_dataset=balanced_dataset, normalize_signals=normalize_signals)
         val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=False, sampler=val_dataset.sampler)
         loaders += [val_loader]
 
     if 'test' in modes:
-        test_dataset = SHHSDataset(mode="test", num_patients=num_patients, dataset_dir=dataset_dir, conv_d=conv_d,
-                                   features_subset=features_subset, one_slice=one_slice, random_flag=random_flag,
-                                   num_ch=num_ch, low_sp=low_sp, filter_stage=filter_stage, task=task,
-                                   oversample=oversample, normalize_signals=normalize_signals)
+        test_dataset = SHHSDataset(mode="test", features_subset=features_subset, filter_stage=filter_stage, task=task,
+                                   balanced_dataset=balanced_dataset, normalize_signals=normalize_signals)
         test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False, sampler=test_dataset.sampler)
         loaders += [test_loader]
 
@@ -245,33 +171,6 @@ def init_datasets(task, oversample, normalize_signals, num_patients=200, dataset
     if len(loaders) == 1:
         loaders = loaders[0]
     return loaders
-
-
-def init_specific_signal(specific_signal_name, dataset_dir='filtered0.05', conv_d=1, features_to_compute=None,
-                         low_sp=False, num_ch=2, one_slice=False):
-    if features_to_compute is None:
-        features_to_compute = []
-    test_dataset = SHHSDataset("test", num_patients=1, dataset_dir=dataset_dir, conv_d=conv_d, num_ch=num_ch,
-                               specific_signal=specific_signal_name, features_subset=features_to_compute, low_sp=low_sp, one_slice=one_slice)
-    test_loader = DataLoader(dataset=test_dataset, batch_size=1, shuffle=False)
-    return test_loader
-
-
-def get_feature_file_name(low_sp, num_ch):
-    if num_ch == 1:
-        if low_sp:
-            feature_file_name = 'splow_freq_sig_1ch.pkl'
-        else:
-            feature_file_name = 'sp_freq_sw_1ch.pkl'    # 'sp_freq_sig_1ch.pkl'
-    else:
-        if low_sp:
-            feature_file_name = 'splow_freq_sig.pkl'
-        else:
-            # This one for sw, sp, rem:
-            feature_file_name = 'sp_sw_rem.pkl'
-            # This one for freq:
-            # feature_file_name = 'frequency_relative.pkl' #'frequency_relative_all.pkl'  #'frequency_relative.pkl'    #'frequency_nonorm.pkl'  # 'freq_sw.pkl'    # 'sp_freq_sig_norm_norm.pkl'
-    return feature_file_name
 
 
 def init_gap_datasets(modes, idx, oversample, batch_size):
@@ -307,14 +206,13 @@ def init_gap_datasets(modes, idx, oversample, batch_size):
 
 class GapDataset(Dataset):
     def __init__(self, mode, idx, oversample):
-        fs = 80  # we extracted 5-fold CV splits only for the downsampled data
         data_dir = os.path.join(os.getcwd(), 'shhs', 'preprocessed', 'shhs1', 'ALL0.05', 'held_out_data')
         dataset_path = os.path.join(data_dir, f'{mode}_{idx}.pkl')
 
         self.labels = pd.read_pickle(dataset_path)
         self.dataset_size = len(self.labels)
 
-        self.sampler = sampler_func(oversample, self.labels)
+        self.sampler = balance_classes(oversample, self.labels)
 
         return
 
@@ -328,3 +226,34 @@ class GapDataset(Dataset):
     def __len__(self):
         return self.dataset_size
 
+
+def create_kfoldcv_loaders(task, balanced_dataset, normalize_signals=True, batch_size=32, features_subset=None):
+    num_folds = 5
+    kfoldcv_testloaders = []
+    test_dataset = SHHSDataset("test", task=task, normalize_signals=normalize_signals,
+                               balanced_dataset=balanced_dataset, features_subset=features_subset)
+
+    np.random.seed(24)
+    idxs = (np.random.multinomial(1, 0.2 * np.ones(5).ravel(), size=len(test_dataset)) == 1).argmax(1).astype(int)
+
+    for i_fold in range(num_folds):
+        idx_test = idxs == i_fold
+        idx_val = idxs == (i_fold + 1) % 5
+        idx_train = ((idxs == (i_fold + 2) % 5) |
+                     (idxs == (i_fold + 3) % 5) |
+                     (idxs == (i_fold + 4) % 5))
+
+        train_dataset = SHHSDataset("test", task=task, normalize_signals=normalize_signals,
+                                    balanced_dataset=balanced_dataset, features_subset=features_subset, idxs=idx_train)
+        train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=False,
+                                                   sampler=train_dataset.sampler)
+        val_dataset = SHHSDataset("test", task=task, normalize_signals=normalize_signals,
+                                  balanced_dataset=balanced_dataset, features_subset=features_subset, idxs=idx_val)
+        val_loader = torch.utils.data.DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=False,
+                                                 sampler=val_dataset.sampler)
+        test_dataset = SHHSDataset("test", task=task, normalize_signals=normalize_signals,
+                                   balanced_dataset=balanced_dataset, features_subset=features_subset, idxs=idx_test)
+        test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False,
+                                                  sampler=test_dataset.sampler)
+        kfoldcv_testloaders.append((train_loader, val_loader, test_loader))
+    return kfoldcv_testloaders

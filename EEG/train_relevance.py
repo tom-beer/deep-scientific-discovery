@@ -4,45 +4,38 @@ import torch
 import torch.utils.data
 from torch import nn, optim
 from tqdm import tqdm
+
 from networks import MLP1Layer
 from EEG.datasets import init_datasets
 from EEG.feature_utils import feature_names_len_from_subset
 from EEG.train_utils import get_device, calc_save_perf_metrics
 
-file_name = 'rem2remnrem' #"rem_nrem_balanced_frq"
-features_subset = ['rem']
-cuda_id = 2
-dataset_dir = 'ALL0.05'
-num_patients = 1e8
-one_slice = True
-task = 'rem_nrem'  # ['rem_nrem', 'wake_rem', 'all']
-low_sp = False
-oversample = True
+# experiment parameters
+file_name = 'dev'
+lambda_hsic = 600
+features_subset = ['frequency']
+task = 'rem_nrem'
+balanced_dataset = False
 
-num_classes = 2 if 'rem' in task.lower() else 5
+# training parameters
+cuda_id = 0
 num_epochs = 40
 batch_size = 32
-lr = 0.0003
+lr = 0.00003
+
 torch.manual_seed(44)
-
 device = get_device(cuda_id)
-
 file_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'saved_models', file_name)
 if not os.path.exists(file_dir):
     os.mkdir(file_dir)
 
 print(f'{file_name} Started training')
-train_loader, val_loader, test_loader = init_datasets(num_patients=num_patients, dataset_dir=dataset_dir,
-                                                      batch_size=batch_size, conv_d=1, features_subset=features_subset,
-                                                      one_slice=one_slice, task=task, low_sp=low_sp,
-                                                      oversample=oversample, normalize_signals=False)
+train_loader, val_loader, test_loader = init_datasets(task=task, balanced_dataset=True, normalize_signals=False,
+                                                      batch_size=batch_size, features_subset=features_subset)
 feature_len = feature_names_len_from_subset(features_subset)[0]
-model = MLP1Layer(in_size=feature_len, hidden_size=128, out_size=num_classes).to(device)
-
+model = MLP1Layer(in_size=feature_len, hidden_size=128, out_size=2).to(device)
 optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=0)
 criterion = nn.CrossEntropyLoss()
-
-print(f'num_patients - {num_patients}')
 
 
 def train():
@@ -51,7 +44,7 @@ def train():
     for batch_idx, (_, labels, _, features) in enumerate(tqdm(train_loader)):
         features, labels = features.to(device), labels.to(device)
         optimizer.zero_grad()
-        logits = model(features)[0]
+        logits = model(features)
         classification_loss = criterion(logits, labels)
         loss = classification_loss
         loss.backward()
@@ -69,7 +62,7 @@ def val_or_test(loader, mode='val', accuracy=None, file_name=None, epoch=None):
     with torch.no_grad():
         for batch_idx, (_, labels, _, features) in enumerate(tqdm(loader)):
             features, labels = features.to(device), labels.to(device)
-            logits = model(features)[0]
+            logits = model(features)
             _, predicted = torch.max(logits.data, 1)
 
             if torch.cuda.is_available():

@@ -45,7 +45,7 @@ lr_scheduler = AnnealingRestartScheduler(lr_min=lr/100, lr_max=lr, steps_per_epo
 lambda_vec = lambda_hsic * np.hstack([np.linspace(0, 1, num_epochs//2), np.ones(num_epochs-num_epochs//2)])
 
 
-def train(train_loader, epoch, lambda_hsic):
+def train(epoch, lambda_hsic):
     model.train()
     train_loss = 0
     correct = 0
@@ -82,7 +82,7 @@ def train(train_loader, epoch, lambda_hsic):
     print(f'Training Accuracy: {epoch_accuracy}')
     print(f'====> Epoch: {epoch} Average loss: {train_loss / len(train_loader.dataset):.4f}')
 
-    return train_loader, lambda_hsic
+    return lambda_hsic
 
 
 def valid_or_test(mode, perf_dict=None):
@@ -145,7 +145,7 @@ if __name__ == "__main__":
     perf_dict = None
     print(f'Started training main task, {exp_name}')
     for epoch in range(num_epochs):
-        # train_loader, lambda_hsic = train(train_loader, epoch, lambda_hsic)
+        lambda_hsic = train(epoch, lambda_hsic)
         perf_dict = valid_or_test(mode='valid', perf_dict=perf_dict)
         lr_scheduler.on_epoch_end_update(epoch=epoch)
     valid_or_test(mode='test')

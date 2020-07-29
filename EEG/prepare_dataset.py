@@ -7,6 +7,8 @@ import numpy as np
 import scipy.signal as ssignal
 from sklearn import preprocessing
 
+shhs_base_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'shhs')
+
 
 def read_edf_and_annot(edf_file, hyp_file, channels=['EEG', 'EEG(sec)'], shhs='1'):
 
@@ -87,24 +89,17 @@ def read_edfrecord(filename, channels, shhs='1'):
     return sigbufs
 
 
-def extract_dataset(prop_sampled=1.0, preprocessed_dir=None, nb_patients=None, ds=False, num_slices=4):
+def extract_dataset(prop_sampled=1.0, nb_patients=None, ds=False, num_slices=4):
     np.random.seed(42)
     shhs = '1'
     fs = 125  # original sampling frequency [Hz]
     fs_ds = 80  # downsampled sampling frequency [Hz]
-    shhs_base_dir = os.path.join(os.getcwd(), 'shhs')
     assert num_slices == 4, 'This code supports 4 slices only for now'
-    # if filter, in both cases it will be at 0.5-25Hz
-    # + subsampling / 2: 64 or 62.5Hz, i.e. 1920 or 1875 points per 30s segment.
 
-    # read and preprocessed data will be saved in
-    # preprocessed_dir
-    # dataset_dir = 'filtered' if ds else 'nofilter'
-    dataset_dir = 'ALL'
-    dataset_dir = dataset_dir + str(prop_sampled)
+    # read and preprocessed data will be saved in preprocessed_dir
+    dataset_dir = 'ALL' + str(prop_sampled)
 
-    if preprocessed_dir is None:
-        preprocessed_dir = os.path.join(shhs_base_dir, 'preprocessed', 'shhs' + shhs, dataset_dir)
+    preprocessed_dir = os.path.join(shhs_base_dir, 'preprocessed', 'shhs' + shhs, dataset_dir)
 
     edf_dir = os.path.join(shhs_base_dir, 'polysomnography', 'edfs', 'shhs' + shhs)
     print(edf_dir)
@@ -273,10 +268,11 @@ def extract_dataset(prop_sampled=1.0, preprocessed_dir=None, nb_patients=None, d
     return preprocessed_dir
 
 
-def train_val_test_split_names(preprocessed_dir, ds, nb_patients):
+def train_val_test_split_names(preprocessed_dir, prop_sampled, nb_patients=None):
+    if nb_patients is None:
+        nb_patients = 1e8
     np.random.seed(42)
-    # dataset_dir = 'filtered0.05' if ds else 'nofilter0.05'
-    dataset_dir ='ALL' + str(0.05)
+    dataset_dir ='ALL' + str(prop_sampled)
     preprocessed_names = glob.glob(os.path.join(
         preprocessed_dir, '*.p'))
     preprocessed_names = preprocessed_names[:int(nb_patients)]
@@ -309,12 +305,7 @@ def train_val_test_split_names(preprocessed_dir, ds, nb_patients):
 
 
 if __name__ == '__main__':
-    nb_patients = int(1e8)
     ds = True
-    dataset_dir = 'ALL'
-    dataset_dir = dataset_dir + str(0.05)
-    shhs_base_dir = os.path.join(os.getcwd(), 'shhs')
-
-    preprocessed_dir = os.path.join(shhs_base_dir, 'preprocessed', 'shhs' + '1', dataset_dir)
-    preprocessed_dir = extract_dataset(prop_sampled=0.05, nb_patients=nb_patients, ds=ds, num_slices=4)
-    train_val_test_split_names(preprocessed_dir, ds=ds, nb_patients=nb_patients)
+    prop_sampled = 0.05
+    preprocessed_dir = extract_dataset(prop_sampled=prop_sampled, ds=ds, num_slices=4)
+    train_val_test_split_names(preprocessed_dir, prop_sampled=prop_sampled)

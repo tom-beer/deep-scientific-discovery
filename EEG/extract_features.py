@@ -1,40 +1,34 @@
 import torch.utils.data
-from tqdm import tqdm
 import pandas as pd
 import numpy as np
 import os
 from yasa import rem_detect
+from tqdm import tqdm
 
 from EEG.feature_utils import compute_features, feature_names_len_from_subset, normalize_features
 from EEG.datasets import SHHSDataset
 
 
-def extract_features(features_to_compute, save_name, low, modes=None, mini=False, normalize=False, num_chan=2):
+def extract_features(features_to_compute, save_name, modes=None, normalize=False):
 
     if modes is None:
         modes = ['train', 'valid', 'test']
     for mode in modes:
         assert mode in ['train', 'valid', 'test']  # Check your spelling!
 
-    channel_names = ['EEG', 'EEG(sec)'][:num_chan]
+    channel_names = ['EEG', 'EEG(sec)']
 
-    dataset_dir = 'ALL0.05'
-    fs = 80 if ds else 125
+    fs = 80
 
     features = {}
     for mode in modes:
-        dataset = SHHSDataset(mode, num_patients=1e8, dataset_dir=dataset_dir, conv_d=1, features_subset=[],
-                              one_slice=True, num_ch=num_chan, task='rem_nrem', normalize_signals=False,
-                              oversample=False)
+        dataset = SHHSDataset(mode, features_subset=[], task='rem_nrem', normalize_signals=False, oversample=False)
 
-        if mini:
-            dataset.mini_dataset()
         loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=1, shuffle=False)
 
         for batch_idx, (signal, target, signal_name, _) in enumerate(tqdm(loader)):
             signal = signal.numpy().squeeze()
-            signal = signal[:num_chan, :]
-            features_curr = compute_features(signal, low=low, fs=fs, ch_names=channel_names,
+            features_curr = compute_features(signal, low=False, fs=fs, ch_names=channel_names,
                                                         features_to_compute=features_to_compute)
             if 'rem' in features_to_compute:
                 eog = dataset.get_eog(signal_name)
@@ -62,12 +56,6 @@ def extract_features(features_to_compute, save_name, low, modes=None, mini=False
 
 features_to_compute = ['spindle', 'sw', 'rem']
 normalize = True
-ds = True
-num_chan = 2
-low = False
 save_name = 'sp_sw_rem.pkl'
-features_df = extract_features(features_to_compute, modes=['train', 'valid', 'test'], mini=False, normalize=normalize,
-                               num_chan=num_chan, save_name=save_name, low=low)
-
-# Check that we can read this file:
-# df = pd.read_pickle(os.path.join(os.getcwd(), 'shhs', 'preprocessed', 'features','features_0.05_freq_spindle.pkl'))
+features_df = extract_features(features_to_compute, modes=['train', 'valid', 'test'], normalize=normalize,
+                               save_name=save_name)

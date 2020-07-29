@@ -51,21 +51,6 @@ def feature_names_len_from_subset(features_subsets):
     return feature_len, names_list
 
 
-def kc_template_matching(sw, fs, thresh):
-    """
-    template matching for seg
-    :param sw: slow-wave seg from the signal
-    :param fs: frequency
-    :param thresh: Threshold from matching
-
-    :return: True if matches to the template False otherwise
-    """
-
-    kc_template = pkl.load(open('kc_template.pkl', 'rb'))
-
-    raise NotImplementedError
-
-
 def compute_frequency_features(signal, fs, ch_names=['EEG', 'EEG(sec)'], normalize_signal=True):
     if normalize_signal:
         sscaler = StandardScaler()

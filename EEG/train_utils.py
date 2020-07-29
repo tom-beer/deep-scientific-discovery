@@ -1,14 +1,15 @@
-from torch import device
-from sklearn.metrics import f1_score, cohen_kappa_score
 import glob
 import os
+import torch
 import numpy as np
 import torch.utils.data
 import pickle as pkl
+from torch import device
+from sklearn.metrics import f1_score, cohen_kappa_score
 from tqdm import tqdm
+
 from networks import HSICClassifier
 from EEG.datasets import init_datasets
-import torch
 
 
 def get_device(cuda_id):
@@ -48,18 +49,6 @@ def calc_save_perf_metrics(labels, preds, accuracy, mode, file_name, save=True, 
     if mode == 'test' and save:
         save_test_perf(results_dict, file_name)
     return results_dict
-
-
-def update_train_stats(train_stats, avg_lambda, batch_size, lr, epoch_loss, hsic_loss, pval_list, num_batches,
-                       total_feature_hsic):
-    train_stats['lambda'].append(avg_lambda)
-    train_stats['batch_size'].append(batch_size)
-    train_stats['lr'].append(lr)
-    train_stats['train_loss'].append(epoch_loss/num_batches)
-    train_stats['hsic_loss'].append(hsic_loss/num_batches)  # hsic loss (or 0 for baseline models)
-    train_stats['pval'].append(pval_list)
-    train_stats['feature_hsic'].append(total_feature_hsic/num_batches)
-    return train_stats
 
 
 def unify_gap(mode, file_dir, file_name):
@@ -177,18 +166,9 @@ def col_names_to_idx(subset, df):
     return[df.columns.get_loc(col) for col in subset]
 
 
-def run_params(file_name, features_subset, def_feature_opt='HSIC+Concat', task='all'):
-    assert def_feature_opt in ['HSIC', 'HSIC+Concat']
-    assert task in ['all', 'wake_rem', 'rem_nrem']
+def run_params(features_subset):
     if features_subset:
-        feature_opt = def_feature_opt
+        feature_opt = 'HSIC+Concat'
     else:
         feature_opt = 'None'
-    signal_len = 9600 if 'ds' in file_name.lower() else 15000
-    signal_len = signal_len / 4 if 'slice' in file_name.lower() else signal_len
-    one_slice = 'slice' in file_name.lower()
-    dataset_dir = 'filtered0.05' if 'ds' in file_name.lower() else 'nofilter0.05'
-    if 'rem' in task:
-        dataset_dir = 'ALL0.05'
-    print(f'dataset_dir = {dataset_dir}')
-    return feature_opt, signal_len, one_slice, dataset_dir
+    return feature_opt
