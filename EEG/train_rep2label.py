@@ -66,7 +66,7 @@ def val_test_rep2label(rep2label_model, loader, mode, file_name, best_acc=None):
     correct = 0
     pred_list, label_list = [], []
     with torch.no_grad():
-        for batch_idx, (signals, labels, _, features) in enumerate(train_loader):
+        for batch_idx, (signals, labels, _, features) in enumerate(loader):
             signals, labels, features = signals.to(device), labels.to(device), features.to(device)
             _, _, gap = main_model(x=signals, features=features)
 
