@@ -3,7 +3,7 @@
 <img src="ECG/logo.png" width=125 height=125 align="right">
 
 # Deep Scientific Discovery
-This repository contains code for the paper [Using Deep Networks for Scientific Discovery in Physiological Signals](https://www.mlforhc.org/accepted-papers)
+This repository contains code for the paper [Using Deep Networks for Scientific Discovery in Physiological Signals](https://static1.squarespace.com/static/59d5ac1780bd5ef9c396eda6/t/5f22cc45a1025d04faaf5b7c/1596116059099/126_CameraReadySubmission_Deep_networks_for_scientific_discovery_in_physiological_signals+%281%29.pdf)
 
 *Tom Beer, Bar Eini-Porat, Sebastian Goodfellow, Danny Eytan and Uri Shalit*
 
